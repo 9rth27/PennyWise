@@ -1,0 +1,186 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { QuickAddButtons } from '@/components/quick-add-buttons';
+import { TodaySnapshot } from '@/components/today-snapshot';
+import { ExpenseList, Expense } from '@/components/expense-list';
+import { DashboardCard } from '@/components/dashboard-card';
+import { toast } from 'sonner';
+
+import { useExpenses } from '@/hooks/use-expenses';
+
+export default function Dashboard() {
+  const { expenses, monthlyBudget, addExpense, deleteExpense, isLoaded } = useExpenses();
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
+  // Calculate today's data
+  const today = new Date().toISOString().split('T')[0];
+  const todayExpenses = expenses.filter((e) => e.date === today);
+  const totalTodaySpent = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const handleQuickAdd = (category: string, amount: number) => {
+    const id = Date.now().toString();
+    const newExpense: Expense = {
+      id,
+      category,
+      amount: amount,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString(),
+    };
+    
+    addExpense(newExpense);
+    
+    toast.success(`Added ₹${amount} for ${category}`, {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          deleteExpense(id);
+          toast.info('Transaction undone');
+        }
+      }
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteExpense(id);
+    toast.error('Transaction deleted');
+  };
+
+  const monthlyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const remainingBudget = monthlyBudget - monthlyTotal;
+
+  // Calculate category breakdown
+  const categoryBreakdown = expenses.reduce((acc, expense) => {
+    const category = expense.category.toLowerCase().trim();
+    const existing = acc.find((item) => item.category === category);
+    if (existing) {
+      existing.total += expense.amount;
+      existing.count += 1;
+    } else {
+      acc.push({
+        category: category,
+        total: expense.amount,
+        count: 1,
+      });
+    }
+    return acc;
+  }, [] as Array<{ category: string; total: number; count: number }>);
+
+  const topCategory = categoryBreakdown.length > 0 
+    ? categoryBreakdown.reduce((max, current) => (current.total > max.total ? current : max))
+    : null;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-4 border-black rounded-xl p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex justify-between items-start">
+        <div>
+          <h1 className="font-black text-4xl mb-2">{getGreeting()}, User! 👋</h1>
+          <p className="text-gray-600 font-bold text-lg">Start tracking by setting a monthly budget or adding expenses</p>
+        </div>
+        <Link href="/add" className="border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap ml-4">
+          + Add Expense
+        </Link>
+      </div>
+
+      {/* Budget Overview */}
+      <DashboardCard title="Monthly Budget Overview">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="border-4 border-black rounded-lg p-4 bg-gradient-to-br from-emerald-500 to-green-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm font-bold text-green-100 mb-1">BUDGET</p>
+            <p className="text-3xl font-black text-white">₹{monthlyBudget.toLocaleString()}</p>
+          </div>
+          <div className="border-4 border-black rounded-lg p-4 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm font-bold text-blue-100 mb-1">SPENT</p>
+            <p className="text-3xl font-black text-white">₹{monthlyTotal.toLocaleString()}</p>
+          </div>
+          <div className={`border-4 border-black rounded-lg p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${remainingBudget >= 0 ? 'bg-gradient-to-br from-purple-500 to-pink-600' : 'bg-gradient-to-br from-red-500 to-orange-600'}`}>
+            <p className="text-sm font-bold text-white opacity-80 mb-1">REMAINING</p>
+            <p className="text-3xl font-black text-white">
+              ₹{remainingBudget.toLocaleString()}
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 bg-gray-200 border-2 border-black rounded-lg h-3 overflow-hidden">
+          <div
+            className="bg-black h-full transition-all"
+            style={{ width: `${Math.min((monthlyTotal / monthlyBudget) * 100, 100)}%` }}
+          />
+        </div>
+      </DashboardCard>
+
+      {/* Quick Add */}
+      <QuickAddButtons onAdd={handleQuickAdd} />
+
+      {/* Today's Snapshot */}
+      <TodaySnapshot totalSpent={totalTodaySpent} transactionCount={todayExpenses.length} />
+
+      {/* Quick Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <DashboardCard title="Top Spending Category">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-bold mb-1">Category</p>
+              <p className="text-2xl font-black text-black capitalize">{topCategory?.category || 'N/A'}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-600 font-bold mb-1">Total Spent</p>
+              <p className="text-2xl font-black text-black">₹{topCategory?.total.toLocaleString() || '0'}</p>
+            </div>
+          </div>
+        </DashboardCard>
+
+        <DashboardCard title="This Month's Performance">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-bold text-gray-600">Budget Usage</p>
+              <p className="text-sm font-bold text-black">{Math.round((monthlyTotal / monthlyBudget) * 100)}%</p>
+            </div>
+            <div className="bg-gray-200 border-2 border-black rounded-lg h-4 overflow-hidden">
+              <div
+                className="bg-black h-full transition-all"
+                style={{ width: `${Math.min((monthlyTotal / monthlyBudget) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-600 font-bold">
+              {remainingBudget >= 0 ? `₹${remainingBudget.toLocaleString()} remaining` : `Exceeded by ₹${Math.abs(remainingBudget).toLocaleString()}`}
+            </p>
+          </div>
+        </DashboardCard>
+      </div>
+
+      {/* Recent Activity */}
+      <ExpenseList expenses={expenses} title="Recent Activity" onDelete={handleDelete} />
+
+      {/* Action Buttons */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Link href="/add" className="border-4 border-black rounded-xl p-6 bg-black text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all text-center font-bold">
+          ➕ Add Expense
+        </Link>
+        <Link href="/expenses" className="border-4 border-black rounded-xl p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold">
+          📊 See All Expenses
+        </Link>
+        <Link href="/analytics" className="border-4 border-black rounded-xl p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold">
+          📈 Full Analytics
+        </Link>
+      </div>
+    </div>
+  );
+}
+
