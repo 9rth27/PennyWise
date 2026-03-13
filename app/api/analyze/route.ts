@@ -18,7 +18,8 @@ function getGroqClient() {
 export async function POST(req: NextRequest) {
   try {
     // Rate limiting (10 requests per minute per IP)
-    const ip = req.headers.get('x-forwarded-for') || req.ip || 'unknown';
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : '127.0.0.1';
     if (!rateLimit(ip, 10, 60000)) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
