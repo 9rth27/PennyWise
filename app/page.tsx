@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { QuickAddButtons } from '@/components/quick-add-buttons';
 import { TodaySnapshot } from '@/components/today-snapshot';
@@ -11,25 +11,42 @@ import { toast } from 'sonner';
 import { useExpenses } from '@/hooks/use-expenses';
 
 export default function Dashboard() {
-  const { expenses, monthlyBudget, addExpense, deleteExpense, isLoaded } = useExpenses();
+  const { expenses, monthlyBudget, addExpense, deleteExpense } = useExpenses();
 
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-      </div>
-    );
-  }
+  // Memoize all expensive calculations
+  const { todayExpenses, totalTodaySpent, monthlyTotal, remainingBudget, categoryBreakdown, topCategory } = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayExpenses = expenses.filter((e) => e.date === today);
+    const totalTodaySpent = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const monthlyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const remainingBudget = monthlyBudget - monthlyTotal;
 
-  // Calculate today's data
-  const today = new Date().toISOString().split('T')[0];
-  const todayExpenses = expenses.filter((e) => e.date === today);
-  const totalTodaySpent = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const categoryBreakdown = expenses.reduce((acc, expense) => {
+      const category = expense.category.toLowerCase().trim();
+      const existing = acc.find((item) => item.category === category);
+      if (existing) {
+        existing.total += expense.amount;
+        existing.count += 1;
+      } else {
+        acc.push({
+          category: category,
+          total: expense.amount,
+          count: 1,
+        });
+      }
+      return acc;
+    }, [] as Array<{ category: string; total: number; count: number }>);
 
-  const handleQuickAdd = (category: string, amount: number) => {
-    const id = Date.now().toString();
+    const topCategory = categoryBreakdown.length > 0 
+      ? categoryBreakdown.reduce((max, current) => (current.total > max.total ? current : max))
+      : null;
+
+    return { todayExpenses, totalTodaySpent, monthlyTotal, remainingBudget, categoryBreakdown, topCategory };
+  }, [expenses, monthlyBudget]);
+
+  const handleQuickAdd = useCallback((category: string, amount: number) => {
     const newExpense: Expense = {
-      id,
+      id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
       category,
       amount: amount,
       date: new Date().toISOString().split('T')[0],
@@ -48,43 +65,19 @@ export default function Dashboard() {
         }
       }
     });
-  };
+  }, [addExpense, deleteExpense]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     deleteExpense(id);
     toast.error('Transaction deleted');
-  };
+  }, [deleteExpense]);
 
-  const monthlyTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const remainingBudget = monthlyBudget - monthlyTotal;
-
-  // Calculate category breakdown
-  const categoryBreakdown = expenses.reduce((acc, expense) => {
-    const category = expense.category.toLowerCase().trim();
-    const existing = acc.find((item) => item.category === category);
-    if (existing) {
-      existing.total += expense.amount;
-      existing.count += 1;
-    } else {
-      acc.push({
-        category: category,
-        total: expense.amount,
-        count: 1,
-      });
-    }
-    return acc;
-  }, [] as Array<{ category: string; total: number; count: number }>);
-
-  const topCategory = categoryBreakdown.length > 0 
-    ? categoryBreakdown.reduce((max, current) => (current.total > max.total ? current : max))
-    : null;
-
-  const getGreeting = () => {
+  const getGreeting = useCallback(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
-  };
+  }, []);
 
   return (
     <div className="space-y-8">

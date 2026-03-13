@@ -1,50 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { rateLimit, validateExpense, validateBudget } from '@/lib/security';
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+let groq: Groq | null = null;
+
+function getGroqClient() {
+  if (!groq) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY is not configured');
+    }
+    groq = new Groq({ apiKey });
+  }
+  return groq;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { expenses, budget } = await req.json();
-
-    if (!expenses || !Array.isArray(expenses)) {
-      return NextResponse.json({ error: 'Invalid expenses data' }, { status: 400 });
+    // Rate limiting (10 requests per minute per IP)
+    const ip = req.headers.get('x-forwarded-for') || req.ip || 'unknown';
+    if (!rateLimit(ip, 10, 60000)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      );
     }
 
+    // Check API key is configured
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+
+    const contentType = req.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return NextResponse.json(
+        { error: 'Invalid content type' },
+        { status: 400 }
+      );
+    }
+
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON' },
+        { status: 400 }
+      );
+    }
+
+    const { expenses, budget } = body;
+
+    // Validate budget
+    if (!validateBudget(budget)) {
+      return NextResponse.json(
+        { error: 'Invalid budget amount' },
+        { status: 400 }
+      );
+    }
+
+    // Validate expenses array
+    if (!Array.isArray(expenses) || expenses.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid expenses data' },
+        { status: 400 }
+      );
+    }
+
+    // Validate each expense
+    if (!expenses.every(validateExpense)) {
+      return NextResponse.json(
+        { error: 'One or more expenses are invalid' },
+        { status: 400 }
+      );
+    }
+
+    // Limit expenses to 100 to prevent abuse
+    const limitedExpenses = expenses.slice(0, 100);
+    const totalExpenses = limitedExpenses.reduce((sum: number, e: any) => sum + e.amount, 0);
+
     const prompt = `
-      You are an expert financial advisor. Analyze the following expense data and provide 3-4 actionable, real-time recommendations for the user.
+      You are a financial advisor. Analyze this expense data and provide 2-3 actionable recommendations.
       
-      Monthly Budget: ₹${budget}
-      Total Expenses: ₹${expenses.reduce((sum: number, e: any) => sum + e.amount, 0)}
+      Monthly Budget: ₹${Math.round(budget)}
+      Total Expenses: ₹${Math.round(totalExpenses)}
       
-      Expenses List:
-      ${expenses.map((e: any) => `- ${e.date}: ${e.category} - ₹${e.amount} (${e.time})`).join('\n')}
+      Categories breakdown (limited data):
+      ${limitedExpenses.slice(0, 5).map((e: any) => `- ${e.category}: ₹${e.amount}`).join('\n')}
       
-      Format your response as a JSON object with an "insights" key containing an array of objects. 
-      Each insight object must have:
-      - "type": "alert" | "warning" | "success" | "info"
-      - "icon": A relevant emoji string
-      - "title": A concise title
-      - "message": A helpful, specific recommendation
-      
-      Example:
-      {
-        "insights": [
-          {
-            "type": "warning",
-            "icon": "☕",
-            "title": "High Tea Spending",
-            "message": "You've spent ₹500 on tea this week. Consider brewing at home to save ₹1500 monthly."
-          }
-        ]
-      }
-      
-      Provide only the JSON object.
+      Respond with ONLY valid JSON:
+      { "insights": [{ "type": "alert|warning|success|info", "icon": "emoji", "title": "short title", "message": "brief message" }] }
     `;
 
-    const chatCompletion = await groq.chat.completions.create({
+    const client = getGroqClient();
+    const chatCompletion = await client.chat.completions.create({
       messages: [
         {
           role: 'user',
@@ -53,18 +105,42 @@ export async function POST(req: NextRequest) {
       ],
       model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
+      temperature: 0.7,
+      top_p: 0.9,
     });
 
     const content = chatCompletion.choices[0]?.message?.content;
-    const insights = JSON.parse(content || '{"insights": []}');
+    
+    // Safely parse and validate response
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content || '{}');
+    } catch {
+      return NextResponse.json(
+        [],
+        { status: 200 }
+      );
+    }
 
-    // Some models might return { insights: [...] } or just the array.
-    // We want the array.
-    const result = Array.isArray(insights) ? insights : (insights.insights || []);
+    const result = Array.isArray(parsed) ? parsed : (parsed.insights || []);
+    
+    // Ensure all insights have required fields
+    const safeResult = result.filter((insight: any) => 
+      insight.type && ['alert', 'warning', 'success', 'info'].includes(insight.type) &&
+      insight.icon && insight.title && insight.message
+    ).slice(0, 5); // Limit to 5 insights
 
-    return NextResponse.json(result);
+    return NextResponse.json(safeResult, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      },
+    });
   } catch (error: any) {
-    console.error('Groq API Error:', error);
-    return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 });
+    // Don't expose internal errors
+    console.error('Analysis error (not exposed to client)');
+    return NextResponse.json(
+      [],
+      { status: 200 }
+    );
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { DashboardCard } from './dashboard-card';
 
 export interface Expense {
@@ -29,7 +29,7 @@ interface ExpenseListProps {
   onDelete?: (id: string) => void;
 }
 
-export function ExpenseList({ expenses, title = 'Recent Activity', showAll = false, onDelete }: ExpenseListProps) {
+const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Recent Activity', showAll = false, onDelete }: ExpenseListProps) {
   const displayExpenses = showAll ? expenses : expenses.slice(0, 5);
 
   return (
@@ -65,4 +65,6 @@ export function ExpenseList({ expenses, title = 'Recent Activity', showAll = fal
       </div>
     </DashboardCard>
   );
-}
+});
+
+export { ExpenseListComponent as ExpenseList };

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import {
   BarChart,
   Bar,
@@ -21,44 +21,48 @@ interface ExpenseChartsProps {
   expenses: Expense[];
 }
 
-export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
+const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: ExpenseChartsProps) {
   // Calculate spending by category
-  const categoryData = expenses.reduce(
-    (acc, expense) => {
-      const sanitizedCategory = expense.category.trim().toLowerCase();
-      const displayCategory = sanitizedCategory.charAt(0).toUpperCase() + sanitizedCategory.slice(1);
-      const existing = acc.find((item) => item.category === displayCategory);
-      if (existing) {
-        existing.amount += expense.amount;
-        existing.count += 1;
-      } else {
-        acc.push({
-          category: displayCategory,
-          amount: expense.amount,
-          count: 1,
-        });
-      }
-      return acc;
-    },
-    [] as Array<{ category: string; amount: number; count: number }>
-  );
+  const categoryData = useMemo(() => {
+    return expenses.reduce(
+      (acc, expense) => {
+        const sanitizedCategory = expense.category.trim().toLowerCase();
+        const displayCategory = sanitizedCategory.charAt(0).toUpperCase() + sanitizedCategory.slice(1);
+        const existing = acc.find((item) => item.category === displayCategory);
+        if (existing) {
+          existing.amount += expense.amount;
+          existing.count += 1;
+        } else {
+          acc.push({
+            category: displayCategory,
+            amount: expense.amount,
+            count: 1,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ category: string; amount: number; count: number }>
+    );
+  }, [expenses]);
 
   // Calculate spending by date
-  const dateData = expenses.reduce(
-    (acc, expense) => {
-      const existing = acc.find((item) => item.date === expense.date);
-      if (existing) {
-        existing.amount += expense.amount;
-      } else {
-        acc.push({
-          date: expense.date,
-          amount: expense.amount,
-        });
-      }
-      return acc;
-    },
-    [] as Array<{ date: string; amount: number }>
-  );
+  const dateData = useMemo(() => {
+    return expenses.reduce(
+      (acc, expense) => {
+        const existing = acc.find((item) => item.date === expense.date);
+        if (existing) {
+          existing.amount += expense.amount;
+        } else {
+          acc.push({
+            date: expense.date,
+            amount: expense.amount,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ date: string; amount: number }>
+    );
+  }, [expenses]);
 
   const COLORS = ['#000000', '#444444', '#888888', '#CCCCCC', '#333333', '#666666', '#999999', '#BBBBBB'];
 
@@ -102,4 +106,6 @@ export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
       </DashboardCard>
     </div>
   );
-}
+});
+
+export { ExpenseChartsComponent as ExpenseCharts };

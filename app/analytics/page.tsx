@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { ExpenseCharts } from '@/components/expense-charts';
 import { DashboardCard } from '@/components/dashboard-card';
 import { Expense } from '@/components/expense-list';
@@ -9,42 +9,38 @@ import { AIInsights } from '@/components/ai-insights';
 import { useExpenses } from '@/hooks/use-expenses';
 
 export default function AnalyticsPage() {
-  const { expenses, monthlyBudget, isLoaded } = useExpenses();
+  const { expenses, monthlyBudget } = useExpenses();
 
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-      </div>
+  // Memoize all calculations
+  const { totalSpent, categoryStats, topCategory, avgDailySpending } = useMemo(() => {
+    const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const categoryStats = expenses.reduce(
+      (acc, expense) => {
+        const category = expense.category.toLowerCase().trim();
+        const existing = acc.find((item) => item.category === category);
+        if (existing) {
+          existing.total += expense.amount;
+          existing.count += 1;
+        } else {
+          acc.push({
+            category: category,
+            total: expense.amount,
+            count: 1,
+          });
+        }
+        return acc;
+      },
+      [] as Array<{ category: string; total: number; count: number }>
     );
-  }
 
-  // Calculate insights
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const categoryStats = expenses.reduce(
-    (acc, expense) => {
-      const category = expense.category.toLowerCase().trim();
-      const existing = acc.find((item) => item.category === category);
-      if (existing) {
-        existing.total += expense.amount;
-        existing.count += 1;
-      } else {
-        acc.push({
-          category: category,
-          total: expense.amount,
-          count: 1,
-        });
-      }
-      return acc;
-    },
-    [] as Array<{ category: string; total: number; count: number }>
-  );
+    const topCategory = categoryStats.length > 0 
+      ? categoryStats.reduce((max, current) => (current.total > max.total ? current : max))
+      : null;
 
-  const topCategory = categoryStats.length > 0 
-    ? categoryStats.reduce((max, current) => (current.total > max.total ? current : max))
-    : null;
+    const avgDailySpending = totalSpent / 15; // approximate days
 
-  const avgDailySpending = totalSpent / 15; // approximate days
+    return { totalSpent, categoryStats, topCategory, avgDailySpending };
+  }, [expenses]);
 
   return (
     <div className="space-y-8">

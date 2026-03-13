@@ -4,8 +4,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { Navbar } from '@/components/navbar'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ subsets: ["latin"], display: 'swap', preload: true });
+const geistMono = Geist_Mono({ subsets: ["latin"], display: 'swap', preload: true });
 
 export const metadata: Metadata = {
   title: 'PennyWise - Personal Finance Tracker',
@@ -28,6 +28,17 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  metadataBase: new URL('https://penny-wise.vercel.app'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://penny-wise.vercel.app',
+    siteName: 'PennyWise',
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+  },
 }
 
 import { Toaster } from 'sonner'
@@ -38,8 +49,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased bg-white">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="theme-color" content="#ffffff" />
+        {/* Security: Content Security Policy */}
+        <meta 
+          httpEquiv="Content-Security-Policy" 
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.groq.com; frame-ancestors 'none';" 
+        />
+      </head>
+      <body className={`${geist.className} font-sans antialiased bg-white`}>
         <Toaster position="bottom-right" richColors />
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 py-8">

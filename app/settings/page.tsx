@@ -1,22 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { useExpenses } from '@/hooks/use-expenses';
 import { toast } from 'sonner';
 
+// Initialize settings synchronously
+let initialSettings = {
+  monthlyBudget: 10000,
+  currency: 'INR',
+  theme: 'dark',
+  notifications: true,
+  emailAlerts: false,
+  defaultCategory: 'misc',
+  decimalPlaces: 2,
+  dateFormat: 'DD/MM/YYYY',
+};
+
+let initialQuickAddAmounts: Record<string, number> = {
+  tea: 50,
+  lunch: 200,
+  auto: 150,
+  groceries: 500,
+  misc: 100,
+};
+
+if (typeof window !== 'undefined') {
+  try {
+    const savedSettings = localStorage.getItem('pennywise_settings');
+    if (savedSettings) {
+      initialSettings = JSON.parse(savedSettings);
+    }
+  } catch (e) {
+    console.error('Failed to parse settings', e);
+  }
+
+  try {
+    const savedQuickAdd = localStorage.getItem('quickAddAmounts');
+    if (savedQuickAdd) {
+      initialQuickAddAmounts = JSON.parse(savedQuickAdd);
+    }
+  } catch (e) {
+    console.error('Failed to parse quick add amounts', e);
+  }
+}
+
 export default function SettingsPage() {
-  const { monthlyBudget, updateBudget, clearData, isLoaded } = useExpenses();
-  const [settings, setSettings] = useState({
-    monthlyBudget: 10000,
-    currency: 'INR',
-    theme: 'dark',
-    notifications: true,
-    emailAlerts: false,
-    defaultCategory: 'misc',
-    decimalPlaces: 2,
-    dateFormat: 'DD/MM/YYYY',
-  });
+  const { monthlyBudget, updateBudget, clearData } = useExpenses();
+  const [settings, setSettings] = useState(initialSettings);
 
   const [customCategories, setCustomCategories] = useState([
     { id: 'tea', label: 'Tea/Coffee', color: 'amber' },
@@ -28,75 +59,43 @@ export default function SettingsPage() {
 
   const [newCategory, setNewCategory] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('red');
-  const [quickAddAmounts, setQuickAddAmounts] = useState<Record<string, number>>({
-    tea: 50,
-    lunch: 200,
-    auto: 150,
-    groceries: 500,
-    misc: 100,
-  });
+  const [quickAddAmounts, setQuickAddAmounts] = useState<Record<string, number>>(initialQuickAddAmounts);
 
-  React.useEffect(() => {
-    // Load general settings
-    const savedSettings = localStorage.getItem('pennywise_settings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    } else {
-      setSettings(prev => ({ ...prev, monthlyBudget }));
-    }
-
-    // Load quick add amounts
-    const savedQuickAdd = localStorage.getItem('quickAddAmounts');
-    if (savedQuickAdd) {
-      try {
-        setQuickAddAmounts(JSON.parse(savedQuickAdd));
-      } catch (e) {
-        console.error('Failed to parse quick add amounts', e);
+  const handleSettingChange = useCallback((key: string, value: string | number | boolean) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, [key]: value };
+      if (key === 'monthlyBudget') {
+        updateBudget(Number(value));
       }
-    }
-  }, [monthlyBudget, isLoaded]);
+      localStorage.setItem('pennywise_settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
+  }, [updateBudget]);
 
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-      </div>
-    );
-  }
-
-  const handleSettingChange = (key: string, value: string | number | boolean) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    if (key === 'monthlyBudget') {
-      updateBudget(Number(value));
-    }
-    localStorage.setItem('pennywise_settings', JSON.stringify(newSettings));
-  };
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     localStorage.setItem('pennywise_settings', JSON.stringify(settings));
     toast.success('Settings saved successfully!');
-  };
+  }, [settings]);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     if (window.confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
       clearData();
       toast.info('All transaction data cleared');
     }
-  };
+  }, [clearData]);
 
-  const addCustomCategory = () => {
+  const addCustomCategory = useCallback(() => {
     if (newCategory.trim()) {
       const newCat = {
         id: newCategory.toLowerCase().replace(/\s+/g, '-'),
         label: newCategory,
         color: newCategoryColor,
       };
-      setCustomCategories([...customCategories, newCat]);
+      setCustomCategories(prev => [...prev, newCat]);
       setNewCategory('');
       setNewCategoryColor('red');
     }
-  };
+  }, [newCategory, newCategoryColor]);
 
   const removeCategory = (id: string) => {
     setCustomCategories(customCategories.filter((cat) => cat.id !== id));

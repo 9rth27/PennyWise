@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ExpenseList, Expense } from '@/components/expense-list';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
@@ -8,30 +8,26 @@ import { toast } from 'sonner';
 import { useExpenses } from '@/hooks/use-expenses';
 
 export default function ExpensesPage() {
-  const { expenses, deleteExpense, isLoaded } = useExpenses();
+  const { expenses, deleteExpense } = useExpenses();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-      </div>
-    );
-  }
-
-  const handleDelete = (id: string) => {
-    deleteExpense(id);
-    toast.error('Transaction deleted');
-  };
 
   const categories = ['all', 'tea', 'lunch', 'auto', 'groceries', 'misc', 'entertainment', 'utilities', 'health'];
 
-  const filteredExpenses = selectedCategory === 'all' 
-    ? expenses 
-    : expenses.filter((e) => e.category === selectedCategory);
+  const { filteredExpenses, totalSpent, averageExpense } = useMemo(() => {
+    const filteredExpenses = selectedCategory === 'all' 
+      ? expenses 
+      : expenses.filter((e) => e.category === selectedCategory);
 
-  const totalSpent = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  const averageExpense = filteredExpenses.length > 0 ? totalSpent / filteredExpenses.length : 0;
+    const totalSpent = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const averageExpense = filteredExpenses.length > 0 ? totalSpent / filteredExpenses.length : 0;
+    
+    return { filteredExpenses, totalSpent, averageExpense };
+  }, [selectedCategory, expenses]);
+
+  const handleDelete = useCallback((id: string) => {
+    deleteExpense(id);
+    toast.error('Transaction deleted');
+  }, [deleteExpense]);
 
   return (
     <div className="space-y-8">

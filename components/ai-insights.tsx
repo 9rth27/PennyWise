@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { DashboardCard } from './dashboard-card';
 import { Expense } from './expense-list';
 
@@ -19,7 +19,7 @@ interface Insight {
   message: string;
 }
 
-export function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailySpending, expenses }: AIInsightsProps) {
+const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailySpending, expenses }: AIInsightsProps) {
   const [aiInsights, setAiInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -49,47 +49,8 @@ export function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailyS
     fetchAIInsights();
   }, [expenses, monthlyBudget]);
 
-  const getLocalInsights = () => {
-    const budgetUsagePercent = (monthlySpent / monthlyBudget) * 100;
-    const projectedMonthlySpend = avgDailySpending * 30;
-    const insights: Insight[] = [];
-
-    if (budgetUsagePercent > 100) {
-      insights.push({
-        type: 'alert',
-        icon: '⚠️',
-        title: 'Over Budget',
-        message: `You have exceeded your budget by ₹${(monthlySpent - monthlyBudget).toLocaleString()}.`,
-      });
-    } else if (budgetUsagePercent > 80) {
-      insights.push({
-        type: 'warning',
-        icon: '⚡',
-        title: 'Budget Warning',
-        message: `You are using ${Math.round(budgetUsagePercent)}% of your budget. Be careful with spending.`,
-      });
-    } else {
-      insights.push({
-        type: 'success',
-        icon: '✓',
-        title: 'Budget on Track',
-        message: `You are on track with your budget. Keep it up!`,
-      });
-    }
-
-    if (projectedMonthlySpend > monthlyBudget) {
-      insights.push({
-        type: 'alert',
-        icon: '📊',
-        title: 'Projected Over Budget',
-        message: `At your current spending rate (₹${avgDailySpending.toFixed(0)}/day), you will exceed budget by ₹${(projectedMonthlySpend - monthlyBudget).toLocaleString()}.`,
-      });
-    }
-
-    return insights;
-  };
-
-  const insights = aiInsights.length > 0 ? aiInsights : getLocalInsights();
+  // Only use API insights - no hardcoded fallbacks
+  const insights = aiInsights;
 
   const getInsightClass = (type: string) => {
     switch (type) {
@@ -112,6 +73,10 @@ export function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailyS
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
             <span className="ml-3 font-bold">Analyzing your expenses...</span>
           </div>
+        ) : insights.length === 0 ? (
+          <div className="text-center p-8 text-gray-600">
+            <p>Add expenses to get AI-powered insights</p>
+          </div>
         ) : (
           insights.map((insight, idx) => (
             <div key={idx} className={`border-4 rounded-lg p-5 ${getInsightClass(insight.type)} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
@@ -128,4 +93,6 @@ export function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailyS
       </div>
     </DashboardCard>
   );
-}
+});
+
+export { AIInsightsComponent as AIInsights };

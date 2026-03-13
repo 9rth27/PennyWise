@@ -13,7 +13,7 @@ export default function AddExpensePage() {
 
   const handleSubmit = (data: { category: string; amount: number; description?: string }) => {
     const newExpense = {
-      id: Date.now().toString(),
+      id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
       ...data,
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString(),

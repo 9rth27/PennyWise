@@ -1,13 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export function Navbar() {
+const NavbarComponent = memo(function Navbar() {
   const pathname = usePathname();
 
-  const isActive = (path: string) => pathname === path;
+  const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
   const navItems = [
     { href: '/', label: 'Dashboard' },
@@ -49,4 +49,6 @@ export function Navbar() {
       </div>
     </nav>
   );
-}
+});
+
+export { NavbarComponent as Navbar };

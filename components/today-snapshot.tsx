@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { DashboardCard } from './dashboard-card';
 
 interface TodaySnapshotProps {
@@ -6,7 +6,9 @@ interface TodaySnapshotProps {
   transactionCount: number;
 }
 
-export function TodaySnapshot({ totalSpent, transactionCount }: TodaySnapshotProps) {
+const TodaySnapshotComponent = memo(function TodaySnapshot({ totalSpent, transactionCount }: TodaySnapshotProps) {
+  const average = useMemo(() => transactionCount > 0 ? (totalSpent / transactionCount).toFixed(0) : '0', [totalSpent, transactionCount]);
+
   return (
     <DashboardCard title="Today's Snapshot">
       <div className="space-y-4">
@@ -22,11 +24,13 @@ export function TodaySnapshot({ totalSpent, transactionCount }: TodaySnapshotPro
           <div className="border-2 border-black rounded-lg p-3 bg-gray-50">
             <p className="text-xs font-bold text-gray-600">Average</p>
             <p className="text-2xl font-black text-black">
-              ₹{transactionCount > 0 ? (totalSpent / transactionCount).toFixed(0) : 0}
+              ₹{average}
             </p>
           </div>
         </div>
       </div>
     </DashboardCard>
   );
-}
+});
+
+export { TodaySnapshotComponent as TodaySnapshot };
