@@ -41,49 +41,6 @@ export default function HelpPage() {
     },
   ];
 
-  const features = [
-    {
-      title: 'Dashboard Overview',
-      description: 'Get a quick snapshot of your monthly budget, spending, and remaining balance. See today\'s expenses and recent transactions at a glance.',
-      icon: '📊',
-    },
-    {
-      title: 'Quick Add Expenses',
-      description: 'Quickly add expenses with preset categories like Tea, Lunch, Auto, Groceries, and Misc. Add amounts with just a few clicks.',
-      icon: '⚡',
-    },
-    {
-      title: 'Detailed Analytics',
-      description: 'View comprehensive spending analytics with pie charts showing category breakdown and bar charts for daily trends.',
-      icon: '📈',
-    },
-    {
-      title: 'Expense Tracking',
-      description: 'Maintain a complete history of all transactions with category labels, dates, times, and descriptions for detailed records.',
-      icon: '📝',
-    },
-    {
-      title: 'Budget Management',
-      description: 'Set monthly budget limits and track your spending against them. Get alerted when you approach or exceed your budget.',
-      icon: '💰',
-    },
-    {
-      title: 'AI-Powered Insights',
-      description: 'Receive intelligent recommendations based on your spending patterns, including alerts and projections for the month.',
-      icon: '💡',
-    },
-    {
-      title: 'Custom Categories',
-      description: 'Create unlimited custom expense categories with color coding for better organization and tracking.',
-      icon: '🎨',
-    },
-    {
-      title: 'Data Export/Import',
-      description: 'Export your expense data as CSV or import data from other expense tracking applications.',
-      icon: '💾',
-    },
-  ];
-
   const tips = [
     '📱 Use the Quick Add buttons for frequently spent amounts like your daily coffee or lunch cost.',
     '🎯 Set realistic monthly budgets based on your income and necessary expenses.',
@@ -102,19 +59,6 @@ export default function HelpPage() {
         <h1 className="font-black text-4xl mb-2">Help & Documentation</h1>
         <p className="text-gray-600 font-bold text-lg">Learn how to use PennyWise to manage your finances effectively</p>
       </div>
-
-      {/* Features Overview */}
-      <DashboardCard title="Key Features">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {features.map((feature, idx) => (
-            <div key={idx} className="border-3 border-black rounded-lg p-4 bg-gray-50">
-              <div className="text-3xl mb-2">{feature.icon}</div>
-              <p className="font-bold text-black mb-1">{feature.title}</p>
-              <p className="text-sm text-gray-700">{feature.description}</p>
-            </div>
-          ))}
-        </div>
-      </DashboardCard>
 
       {/* Tips & Tricks */}
       <DashboardCard title="Tips & Tricks">
