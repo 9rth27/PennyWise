@@ -51,12 +51,12 @@ export function QuickAddButtons({ onAdd }: QuickAddButtonsProps) {
 
   return (
     <DashboardCard title="Quick Add Expense">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {QUICK_CATEGORIES.map((category) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        {QUICK_CATEGORIES.map((category, index) => (
           <button
             key={category.id}
             onClick={() => onAdd(category.id, amounts[category.id] || DEFAULT_AMOUNTS[category.id])}
-            className={`border-3 ${category.borderColor} rounded-xl p-4 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center`}
+            className={`border-3 ${category.borderColor} rounded-xl p-4 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center ${index === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
           >
             <div className="text-3xl mb-2">{category.emoji}</div>
             <div className="font-bold text-xs md:text-sm">{category.label}</div>

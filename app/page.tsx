@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { QuickAddButtons } from '@/components/quick-add-buttons';
 import { TodaySnapshot } from '@/components/today-snapshot';
@@ -10,7 +11,7 @@ import { toast } from 'sonner';
 
 import { useExpenses } from '@/hooks/use-expenses';
 
-export default function Dashboard() {
+function DashboardContent() {
   const { expenses, monthlyBudget, addExpense, deleteExpense } = useExpenses();
 
   // Memoize all expensive calculations
@@ -60,7 +61,7 @@ export default function Dashboard() {
       action: {
         label: 'Undo',
         onClick: () => {
-          deleteExpense(id);
+          deleteExpense(newExpense.id);
           toast.info('Transaction undone');
         }
       }
@@ -82,12 +83,12 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-4 border-black rounded-xl p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex justify-between items-start">
+      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="font-black text-4xl mb-2">{getGreeting()}, User! 👋</h1>
-          <p className="text-gray-600 font-bold text-lg">Start tracking by setting a monthly budget or adding expenses</p>
+          <h1 className="font-black text-3xl md:text-4xl mb-2">{getGreeting()}, User!</h1>
+          <p className="text-gray-600 font-bold text-base md:text-lg">Start tracking by setting a monthly budget or adding expenses</p>
         </div>
-        <Link href="/add" className="border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap ml-4">
+        <Link href="/add" className="w-full md:w-auto text-center border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap">
           + Add Expense
         </Link>
       </div>
@@ -162,18 +163,20 @@ export default function Dashboard() {
       <ExpenseList expenses={expenses} title="Recent Activity" onDelete={handleDelete} />
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Link href="/add" className="border-4 border-black rounded-xl p-6 bg-black text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all text-center font-bold">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <Link href="/add" className="border-4 border-black rounded-xl p-4 md:p-6 bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all text-center font-bold text-sm md:text-base">
           ➕ Add Expense
         </Link>
-        <Link href="/expenses" className="border-4 border-black rounded-xl p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold">
+        <Link href="/expenses" className="border-4 border-black rounded-xl p-4 md:p-6 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-sm md:text-base">
           📊 See All Expenses
         </Link>
-        <Link href="/analytics" className="border-4 border-black rounded-xl p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold">
+        <Link href="/analytics" className="border-4 border-black rounded-xl p-4 md:p-6 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-sm md:text-base sm:col-span-2 md:col-span-1">
           📈 Full Analytics
         </Link>
       </div>
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(DashboardContent), { ssr: false });
 
