@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
+import { toast } from 'sonner';
 
 export default function HelpPage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -73,23 +75,39 @@ export default function HelpPage() {
     setContactForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleContactFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleContactFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const subject = encodeURIComponent(contactForm.subject.trim());
-    const body = encodeURIComponent(
-      `Name: ${contactForm.name.trim()}\nEmail: ${contactForm.email.trim()}\n\nMessage:\n${contactForm.message.trim()}`,
-    );
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactForm),
+      });
 
-    window.location.href = `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+      const data = await response.json();
 
-    setContactForm({
-      name: '',
-      email: '',
-      subject: '',
-      message: '',
-    });
-    setShowContactForm(false);
+      if (!response.ok) {
+        toast.error(data?.error || 'Unable to send message right now.');
+        return;
+      }
+
+      toast.success('Message sent successfully. We will get back to you soon.');
+      setContactForm({
+        name: '',
+        email: '',
+        subject: '',
+        message: '',
+      });
+      setShowContactForm(false);
+    } catch {
+      toast.error('Unable to send message right now. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -243,9 +261,10 @@ export default function HelpPage() {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
             >
-              Send Message
+              {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
           </form>
         )}
