@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { DashboardCard } from './dashboard-card';
 
 const DEFAULT_AMOUNTS: Record<string, number> = {
@@ -39,19 +39,19 @@ interface QuickAddButtonsProps {
 }
 
 export function QuickAddButtons({ onAdd }: QuickAddButtonsProps) {
-  const [amounts, setAmounts] = useState<Record<string, number>>(initialQuickAddAmounts);
+  const [amounts] = useState<Record<string, number>>(initialQuickAddAmounts);
 
   return (
     <DashboardCard title="Quick Add Expense">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-sm:gap-3">
+      <div className="grid grid-cols-5 max-sm:grid-cols-2 gap-4 max-sm:gap-3">
         {QUICK_CATEGORIES.map((category, index) => (
           <button
             key={category.id}
             onClick={() => onAdd(category.id, amounts[category.id] || DEFAULT_AMOUNTS[category.id])}
-            className={`border-3 ${category.borderColor} rounded-xl p-4 max-sm:p-3 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center max-sm:min-h-32 ${index === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
+            className={`border-3 ${category.borderColor} rounded-xl p-4 max-sm:p-3 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center max-sm:min-h-32 ${index === 4 ? 'max-sm:col-span-2' : ''}`}
           >
             <div className="text-3xl max-sm:text-2xl mb-2">{category.emoji}</div>
-            <div className="font-bold text-xs md:text-sm">{category.label}</div>
+            <div className="font-bold text-sm max-sm:text-xs">{category.label}</div>
             <div className="mt-1 font-black text-sm">₹{amounts[category.id] || DEFAULT_AMOUNTS[category.id]}</div>
           </button>
         ))}
