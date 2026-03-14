@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { DashboardCard } from './dashboard-card';
 import { Expense } from './expense-list';
-
+          <div className="flex flex-col sm:flex-row items-center justify-center p-6 sm:p-8 text-center sm:text-left gap-3">
 interface AIInsightsProps {
-  monthlyBudget: number;
+            <span className="font-bold">Analyzing your expenses...</span>
   monthlySpent: number;
   topCategory: string;
   avgDailySpending: number;
@@ -13,11 +13,11 @@ interface AIInsightsProps {
 }
 
 interface Insight {
-  type: 'alert' | 'warning' | 'success' | 'info';
-  icon: string;
-  title: string;
+            <div key={idx} className={`border-4 rounded-lg p-4 sm:p-5 ${getInsightClass(insight.type)} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <div className="text-2xl sm:text-3xl bg-white/20 rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shadow-inner shrink-0">{insight.icon}</div>
   message: string;
-}
+                  <p className="font-black text-lg sm:text-xl mb-1">{insight.title}</p>
 
 const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailySpending, expenses }: AIInsightsProps) {
   const [aiInsights, setAiInsights] = useState<Insight[]>([]);
