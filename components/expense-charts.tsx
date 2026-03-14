@@ -71,7 +71,7 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
 
 
       <DashboardCard title="Daily Spending Trend">
-        <div className="w-full h-72 sm:h-80 flex items-center justify-center">
+        <div className="w-full h-80 max-sm:h-72 flex items-center justify-center">
           {dateData.length === 0 ? (
             <p className="text-gray-600 font-bold">No data available</p>
           ) : (
@@ -93,13 +93,13 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
           {categoryData.map((item, index) => (
             <div
               key={index}
-              className="border-2 border-black rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-white"
+              className="border-2 border-black rounded-lg p-3 flex items-center justify-between bg-white max-sm:flex-col max-sm:items-start max-sm:gap-2"
             >
               <div>
                 <p className="font-bold text-black">{item.category}</p>
                 <p className="text-sm text-gray-600">{item.count} transaction{item.count !== 1 ? 's' : ''}</p>
               </div>
-              <p className="font-black text-lg break-words sm:break-normal">₹{item.amount.toFixed(2)}</p>
+              <p className="font-black text-lg max-sm:break-words">₹{item.amount.toFixed(2)}</p>
             </div>
           ))}
         </div>

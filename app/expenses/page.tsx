@@ -34,21 +34,21 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-4 border-black rounded-xl p-6 sm:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h1 className="font-black text-3xl sm:text-4xl mb-2">All Expenses</h1>
-        <p className="text-gray-600 font-bold text-base sm:text-lg">View and filter all your transactions</p>
+      <div className="border-4 border-black rounded-xl p-8 max-sm:p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <h1 className="font-black text-4xl max-sm:text-3xl mb-2">All Expenses</h1>
+        <p className="text-gray-600 font-bold text-lg max-sm:text-base">View and filter all your transactions</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DashboardCard title="Total Spent">
-          <p className="text-3xl sm:text-4xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
+          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
         </DashboardCard>
         <DashboardCard title="Transactions">
-          <p className="text-3xl sm:text-4xl font-black text-black">{filteredExpenses.length}</p>
+          <p className="text-4xl max-sm:text-3xl font-black text-black">{filteredExpenses.length}</p>
         </DashboardCard>
         <DashboardCard title="Average Expense">
-          <p className="text-3xl sm:text-4xl font-black text-black break-words">₹{averageExpense.toFixed(2)}</p>
+          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">₹{averageExpense.toFixed(2)}</p>
         </DashboardCard>
       </div>
 

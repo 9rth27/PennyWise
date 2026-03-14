@@ -68,9 +68,9 @@ const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpe
     <DashboardCard title="💡 AI-Powered Insights">
       <div className="space-y-4">
         {loading ? (
-          <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-3 sm:gap-0 p-6 sm:p-8">
+          <div className="flex items-center justify-center p-8 max-sm:flex-col max-sm:text-center max-sm:gap-3 max-sm:p-6">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-            <span className="ml-0 sm:ml-3 font-bold">Analyzing your expenses...</span>
+            <span className="ml-3 max-sm:ml-0 font-bold">Analyzing your expenses...</span>
           </div>
         ) : insights.length === 0 ? (
           <div className="text-center p-8 text-gray-600">
@@ -78,11 +78,11 @@ const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpe
           </div>
         ) : (
           insights.map((insight, idx) => (
-            <div key={idx} className={`border-4 rounded-lg p-4 sm:p-5 ${getInsightClass(insight.type)} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
-              <div className="flex flex-col sm:flex-row gap-4 items-start">
-                <div className="text-2xl sm:text-3xl bg-white/20 rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center shadow-inner shrink-0">{insight.icon}</div>
+            <div key={idx} className={`border-4 rounded-lg p-5 max-sm:p-4 ${getInsightClass(insight.type)} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]`}>
+              <div className="flex gap-4 max-sm:flex-col max-sm:items-start">
+                <div className="text-3xl max-sm:text-2xl bg-white/20 rounded-full w-12 h-12 max-sm:w-11 max-sm:h-11 flex items-center justify-center shadow-inner shrink-0">{insight.icon}</div>
                 <div className="flex-1">
-                  <p className="font-black text-lg sm:text-xl mb-1">{insight.title}</p>
+                  <p className="font-black text-xl max-sm:text-lg mb-1">{insight.title}</p>
                   <p className="font-bold opacity-90">{insight.message}</p>
                 </div>
               </div>
