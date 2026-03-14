@@ -69,8 +69,6 @@ export default function SettingsPage() {
   const [newCategory, setNewCategory] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState<CategoryColor>('red');
   const [quickAddAmounts, setQuickAddAmounts] = useState<QuickAddAmounts>(createDefaultQuickAddAmounts);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const supabase = useMemo(() => {
@@ -83,11 +81,8 @@ export default function SettingsPage() {
 
   const loadUserSettings = useCallback(async () => {
     if (!supabase) {
-      setIsLoadingSettings(false);
       return;
     }
-
-    setIsLoadingSettings(true);
 
     try {
       const {
@@ -133,8 +128,6 @@ export default function SettingsPage() {
         ...normalizedSettings,
         defaultCategory: safeDefaultCategory,
       });
-    } finally {
-      setIsLoadingSettings(false);
     }
   }, [supabase]);
 
@@ -188,39 +181,34 @@ export default function SettingsPage() {
     const normalizedQuickAddAmounts = normalizeQuickAddAmounts(quickAddAmounts);
     const safeDefaultCategory = resolveDefaultCategory(normalizedCategories, settings.defaultCategory);
 
-    setIsSavingSettings(true);
-    try {
-      const { error } = await supabase.from('user_settings').upsert(
-        {
-          user_id: userId,
-          monthly_budget: monthlyBudget,
-          currency: settings.currency,
-          theme: settings.theme,
-          notifications: settings.notifications,
-          email_alerts: settings.emailAlerts,
-          default_category: safeDefaultCategory,
-          decimal_places: settings.decimalPlaces,
-          date_format: settings.dateFormat,
-          quick_add_amounts: normalizedQuickAddAmounts,
-          custom_categories: normalizedCategories,
-        },
-        {
-          onConflict: 'user_id',
-        },
-      );
+    const { error } = await supabase.from('user_settings').upsert(
+      {
+        user_id: userId,
+        monthly_budget: monthlyBudget,
+        currency: settings.currency,
+        theme: settings.theme,
+        notifications: settings.notifications,
+        email_alerts: settings.emailAlerts,
+        default_category: safeDefaultCategory,
+        decimal_places: settings.decimalPlaces,
+        date_format: settings.dateFormat,
+        quick_add_amounts: normalizedQuickAddAmounts,
+        custom_categories: normalizedCategories,
+      },
+      {
+        onConflict: 'user_id',
+      },
+    );
 
-      if (error) {
-        toast.error('Unable to save settings right now.');
-        return false;
-      }
-
-      setSettings((previous) => ({ ...previous, defaultCategory: safeDefaultCategory }));
-      setQuickAddAmounts(normalizedQuickAddAmounts);
-      setCustomCategories(normalizedCategories);
-      return true;
-    } finally {
-      setIsSavingSettings(false);
+    if (error) {
+      toast.error('Unable to save settings right now.');
+      return false;
     }
+
+    setSettings((previous) => ({ ...previous, defaultCategory: safeDefaultCategory }));
+    setQuickAddAmounts(normalizedQuickAddAmounts);
+    setCustomCategories(normalizedCategories);
+    return true;
   }, [currentUserId, customCategories, monthlyBudget, quickAddAmounts, settings, supabase]);
 
   const handleSave = useCallback(async () => {
@@ -311,9 +299,6 @@ export default function SettingsPage() {
       <div className="border-4 border-black rounded-xl p-8 max-sm:p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <h1 className="font-black text-4xl max-sm:text-3xl mb-2">Settings & Customizations</h1>
         <p className="text-gray-600 font-bold text-lg max-sm:text-base">Personalize your money tracking experience</p>
-        {isLoadingSettings && (
-          <p className="text-xs text-gray-500 font-bold mt-2">Loading account settings...</p>
-        )}
       </div>
 
       {/* Budget Settings */}
@@ -550,10 +535,9 @@ export default function SettingsPage() {
       <div className="flex gap-4 max-sm:flex-col">
         <button 
           onClick={handleSave}
-          disabled={isSavingSettings || isLoadingSettings}
           className="flex-1 border-3 border-black rounded-xl p-4 bg-black text-white font-black text-lg hover:bg-gray-900 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]"
         >
-          {isSavingSettings ? 'Saving...' : '💾 Save Settings'}
+          💾 Save Settings
         </button>
         <button 
           onClick={handleResetDefaults}
