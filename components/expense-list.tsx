@@ -39,7 +39,7 @@ const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Rece
           <p className="text-gray-500 font-bold">No expenses recorded yet</p>
         ) : (
           displayExpenses.map((expense) => (
-            <div key={expense.id} className="border-2 border-black rounded-lg p-3 flex items-center justify-between gap-3 bg-white hover:bg-gray-50 transition-colors group max-sm:flex-col max-sm:items-stretch">
+            <div key={expense.id} className="border-2 border-black rounded-lg p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white hover:bg-gray-50 transition-colors group">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="text-2xl">{CATEGORY_EMOJI[expense.category] || '📦'}</div>
                 <div className="flex-1 min-w-0">
@@ -47,7 +47,7 @@ const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Rece
                   <p className="text-xs text-gray-600">{expense.date} at {expense.time}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 max-sm:justify-between max-sm:w-full">
+              <div className="flex items-center gap-4 justify-between w-full sm:justify-start sm:w-auto">
                 <p className="font-black text-lg text-black">₹{expense.amount.toFixed(2)}</p>
                 {onDelete && (
                   <button 

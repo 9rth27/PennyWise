@@ -296,9 +296,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-4 border-black rounded-xl p-8 max-sm:p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h1 className="font-black text-4xl max-sm:text-3xl mb-2">Settings & Customizations</h1>
-        <p className="text-gray-600 font-bold text-lg max-sm:text-base">Personalize your money tracking experience</p>
+      <div className="border-4 border-black rounded-xl p-6 sm:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <h1 className="font-black text-3xl sm:text-4xl mb-2">Settings & Customizations</h1>
+        <p className="text-gray-600 font-bold text-base sm:text-lg">Personalize your money tracking experience</p>
       </div>
 
       {/* Budget Settings */}
@@ -306,7 +306,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-black mb-2">Monthly Budget Limit</label>
-            <div className="flex gap-2 items-center max-sm:flex-col max-sm:items-start">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
               <input
                 type="number"
                 value={monthlyBudget}
@@ -391,7 +391,7 @@ export default function SettingsPage() {
       {/* Notification Settings */}
       <DashboardCard title="Notification Settings">
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 border-2 border-black rounded-lg p-4 bg-gray-50 max-sm:flex-col max-sm:items-start">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-black rounded-lg p-4 bg-gray-50">
             <div>
               <p className="font-bold text-black">In-App Notifications</p>
               <p className="text-xs text-gray-600 font-bold">Get alerts for budget limits</p>
@@ -404,7 +404,7 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-2 border-black rounded-lg p-4 bg-gray-50 max-sm:flex-col max-sm:items-start">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-2 border-black rounded-lg p-4 bg-gray-50">
             <div>
               <p className="font-bold text-black">Email Alerts</p>
               <p className="text-xs text-gray-600 font-bold">Weekly spending summary emails</p>
@@ -459,7 +459,7 @@ export default function SettingsPage() {
               />
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-2">Select Color</label>
-                <div className="grid grid-cols-4 gap-2 max-sm:grid-cols-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
@@ -493,18 +493,18 @@ export default function SettingsPage() {
           <p className="text-sm font-bold text-gray-600 mb-4">Set predetermined amounts for one-tap additions on the dashboard</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {quickAddItems.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 border-2 border-black rounded-lg p-3 bg-gray-50 max-sm:flex-col max-sm:items-start">
+              <div key={item.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border-2 border-black rounded-lg p-3 bg-gray-50">
                 <span className="text-2xl">{item.emoji}</span>
                 <div className="flex-1">
                   <p className="font-bold text-black text-sm">{item.label}</p>
                 </div>
-                <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
+                <div className="flex items-center gap-2 w-full justify-between sm:w-auto sm:justify-start">
                   <span className="font-black">₹</span>
                   <input
                     type="number"
                     value={quickAddAmounts[item.id] || ''}
                     onChange={(e) => handleQuickAddAmountChange(item.id, e.target.value)}
-                    className="border border-black rounded px-2 py-1 font-bold w-20 max-sm:w-24 focus:outline-none"
+                    className="border border-black rounded px-2 py-1 font-bold w-24 sm:w-20 focus:outline-none"
                   />
                 </div>
               </div>
@@ -532,7 +532,7 @@ export default function SettingsPage() {
       </DashboardCard>
 
       {/* Save Button */}
-      <div className="flex gap-4 max-sm:flex-col">
+      <div className="flex flex-col sm:flex-row gap-4">
         <button 
           onClick={handleSave}
           className="flex-1 border-3 border-black rounded-xl p-4 bg-black text-white font-black text-lg hover:bg-gray-900 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)]"

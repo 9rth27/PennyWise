@@ -45,9 +45,9 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-4 border-black rounded-xl p-8 max-sm:p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h1 className="font-black text-4xl max-sm:text-3xl mb-2">Analytics Dashboard</h1>
-        <p className="text-gray-600 font-bold text-lg max-sm:text-base">Detailed insights into your spending</p>
+      <div className="border-4 border-black rounded-xl p-6 sm:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <h1 className="font-black text-3xl sm:text-4xl mb-2">Analytics Dashboard</h1>
+        <p className="text-gray-600 font-bold text-base sm:text-lg">Detailed insights into your spending</p>
       </div>
 
       {/* AI Recommendations */}
@@ -62,19 +62,19 @@ export default function AnalyticsPage() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardCard title="Total Spent">
-          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
+          <p className="text-2xl sm:text-3xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">Last 15 days</p>
         </DashboardCard>
         <DashboardCard title="Transactions">
-          <p className="text-3xl max-sm:text-2xl font-black text-black">{expenses.length}</p>
+          <p className="text-2xl sm:text-3xl font-black text-black">{expenses.length}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">Total count</p>
         </DashboardCard>
         <DashboardCard title="Avg Daily Spend">
-          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">₹{avgDailySpending.toFixed(2)}</p>
+          <p className="text-2xl sm:text-3xl font-black text-black break-words">₹{avgDailySpending.toFixed(2)}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">Per day</p>
         </DashboardCard>
         <DashboardCard title="Top Category">
-          <p className="text-2xl max-sm:text-xl font-black text-black capitalize break-words">{topCategory?.category || 'N/A'}</p>
+          <p className="text-xl sm:text-2xl font-black text-black capitalize break-words">{topCategory?.category || 'N/A'}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">₹{topCategory?.total.toFixed(2) || '0'}</p>
         </DashboardCard>
       </div>
