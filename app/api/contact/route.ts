@@ -239,9 +239,9 @@ export async function POST(req: NextRequest) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL;
-    const supportEmail = process.env.SUPPORT_EMAIL || 'parthpatil1958@gmail.com';
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
 
-    if (!resendApiKey || !fromEmail) {
+    if (!resendApiKey || !fromEmail || !supportEmail) {
       return responseJson({ error: 'Contact service is not configured yet.' }, 503);
     }
 

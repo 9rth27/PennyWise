@@ -20,7 +20,7 @@ export default function HelpPage() {
     website: '',
     turnstileToken: '',
   });
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'parthpatil1958@gmail.com';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '';
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const faqs = [
@@ -265,25 +265,24 @@ export default function HelpPage() {
       </DashboardCard>
 
       {/* Contact Support */}
-      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-5">
+      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-gray-900 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-6">
         <div className="space-y-2">
           <h2 className="font-black text-2xl">Need More Help?</h2>
           <p className="font-bold text-base md:text-lg">If you have questions or feedback, feel free to reach out. We're here to help!</p>
-          <p className="text-sm text-gray-300 font-bold">Support email: {supportEmail}</p>
         </div>
 
-        <div className="flex gap-3 flex-wrap pt-1">
+        <div className="flex gap-3 flex-wrap">
           <button
             type="button"
             onClick={openEmailSupport}
-            className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+            className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-white text-black hover:bg-gray-200 transition-colors"
           >
             📧 Email Support
           </button>
           <button
             type="button"
             onClick={() => setShowContactForm((prev) => !prev)}
-            className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+            className="border-2 border-white rounded-lg px-6 py-2 font-bold text-white hover:bg-gray-800 transition-colors"
           >
             📱 {showContactForm ? 'Hide Form' : 'Contact Form'}
           </button>
