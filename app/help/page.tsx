@@ -20,7 +20,7 @@ export default function HelpPage() {
     website: '',
     turnstileToken: '',
   });
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '';
+  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'parthpatil1958@gmail.com';
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const faqs = [
@@ -113,7 +113,7 @@ export default function HelpPage() {
 
     const widgetId = turnstile.render(turnstileContainerRef.current, {
       sitekey: turnstileSiteKey,
-      theme: 'dark',
+      theme: 'light',
       callback: (token: string) => {
         setContactForm((prev) => ({ ...prev, turnstileToken: token }));
       },
@@ -265,10 +265,14 @@ export default function HelpPage() {
       </DashboardCard>
 
       {/* Contact Support */}
-      <div className="border-4 border-black rounded-xl p-8 bg-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-        <h2 className="font-black text-2xl mb-3">Need More Help?</h2>
-        <p className="mb-4 font-bold">If you have questions or feedback, feel free to reach out. We're here to help!</p>
-        <div className="flex gap-3 flex-wrap">
+      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-black text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-5">
+        <div className="space-y-2">
+          <h2 className="font-black text-2xl">Need More Help?</h2>
+          <p className="font-bold text-base md:text-lg">If you have questions or feedback, feel free to reach out. We're here to help!</p>
+          <p className="text-sm text-gray-300 font-bold">Support email: {supportEmail}</p>
+        </div>
+
+        <div className="flex gap-3 flex-wrap pt-1">
           <button
             type="button"
             onClick={openEmailSupport}
@@ -281,23 +285,23 @@ export default function HelpPage() {
             onClick={() => setShowContactForm((prev) => !prev)}
             className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
           >
-            📱 Contact Form
+            📱 {showContactForm ? 'Hide Form' : 'Contact Form'}
           </button>
         </div>
 
         {showContactForm && (
           <form
             onSubmit={handleContactFormSubmit}
-            className="mt-5 space-y-3 border-2 border-white rounded-lg p-4"
+            className="space-y-4 border-4 border-black rounded-xl p-5 md:p-6 bg-white text-black"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 type="text"
                 value={contactForm.name}
                 onChange={(event) => handleContactInputChange('name', event.target.value)}
                 placeholder="Your name"
                 required
-                className="border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+                className="border-2 border-black rounded-lg px-3 py-2 bg-white text-black placeholder:text-gray-500 font-bold"
               />
               <input
                 type="email"
@@ -305,7 +309,7 @@ export default function HelpPage() {
                 onChange={(event) => handleContactInputChange('email', event.target.value)}
                 placeholder="Your email"
                 required
-                className="border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+                className="border-2 border-black rounded-lg px-3 py-2 bg-white text-black placeholder:text-gray-500 font-bold"
               />
             </div>
 
@@ -325,7 +329,7 @@ export default function HelpPage() {
               onChange={(event) => handleContactInputChange('subject', event.target.value)}
               placeholder="Subject"
               required
-              className="w-full border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+              className="w-full border-2 border-black rounded-lg px-3 py-2 bg-white text-black placeholder:text-gray-500 font-bold"
             />
 
             <textarea
@@ -334,7 +338,7 @@ export default function HelpPage() {
               placeholder="How can we help?"
               required
               rows={5}
-              className="w-full border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+              className="w-full border-2 border-black rounded-lg px-3 py-2 bg-white text-black placeholder:text-gray-500 font-bold"
             />
 
             {turnstileSiteKey && (
@@ -346,7 +350,7 @@ export default function HelpPage() {
             <button
               type="submit"
               disabled={isSubmitting || (Boolean(turnstileSiteKey) && !contactForm.turnstileToken)}
-              className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+              className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-black text-white hover:bg-gray-800 transition-colors"
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
