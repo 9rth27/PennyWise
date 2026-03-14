@@ -24,9 +24,11 @@ export default function ExpensesPage() {
     return { filteredExpenses, totalSpent, averageExpense };
   }, [selectedCategory, expenses]);
 
-  const handleDelete = useCallback((id: string) => {
-    deleteExpense(id);
-    toast.error('Transaction deleted');
+  const handleDelete = useCallback(async (id: string) => {
+    const isDeleted = await deleteExpense(id);
+    if (isDeleted) {
+      toast.error('Transaction deleted');
+    }
   }, [deleteExpense]);
 
   return (

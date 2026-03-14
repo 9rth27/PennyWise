@@ -65,7 +65,7 @@ export default function SettingsPage() {
     setSettings(prev => {
       const newSettings = { ...prev, [key]: value };
       if (key === 'monthlyBudget') {
-        updateBudget(Number(value));
+        void updateBudget(Number(value));
       }
       localStorage.setItem('pennywise_settings', JSON.stringify(newSettings));
       return newSettings;
@@ -77,10 +77,12 @@ export default function SettingsPage() {
     toast.success('Settings saved successfully!');
   }, [settings]);
 
-  const handleClearAll = useCallback(() => {
+  const handleClearAll = useCallback(async () => {
     if (window.confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
-      clearData();
-      toast.info('All transaction data cleared');
+      const isCleared = await clearData();
+      if (isCleared) {
+        toast.info('All transaction data cleared');
+      }
     }
   }, [clearData]);
 

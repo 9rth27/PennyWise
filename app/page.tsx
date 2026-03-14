@@ -45,7 +45,7 @@ function DashboardContent() {
     return { todayExpenses, totalTodaySpent, monthlyTotal, remainingBudget, categoryBreakdown, topCategory };
   }, [expenses, monthlyBudget]);
 
-  const handleQuickAdd = useCallback((category: string, amount: number) => {
+  const handleQuickAdd = useCallback(async (category: string, amount: number) => {
     const newExpense: Expense = {
       id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
       category,
@@ -54,23 +54,30 @@ function DashboardContent() {
       time: new Date().toLocaleTimeString(),
     };
     
-    addExpense(newExpense);
+    const isAdded = await addExpense(newExpense);
+    if (!isAdded) {
+      return;
+    }
     
     toast.success(`Added ₹${amount} for ${category}`, {
       duration: 5000,
       action: {
         label: 'Undo',
-        onClick: () => {
-          deleteExpense(newExpense.id);
-          toast.info('Transaction undone');
+        onClick: async () => {
+          const isDeleted = await deleteExpense(newExpense.id);
+          if (isDeleted) {
+            toast.info('Transaction undone');
+          }
         }
       }
     });
   }, [addExpense, deleteExpense]);
 
-  const handleDelete = useCallback((id: string) => {
-    deleteExpense(id);
-    toast.error('Transaction deleted');
+  const handleDelete = useCallback(async (id: string) => {
+    const isDeleted = await deleteExpense(id);
+    if (isDeleted) {
+      toast.error('Transaction deleted');
+    }
   }, [deleteExpense]);
 
   const getGreeting = useCallback(() => {

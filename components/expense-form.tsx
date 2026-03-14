@@ -24,7 +24,7 @@ const PAYMENT_METHODS = [
 ];
 
 interface ExpenseFormProps {
-  onSubmit: (data: { category: string; amount: number; description?: string; paymentMethod?: string }) => void;
+  onSubmit: (data: { category: string; amount: number; description?: string; paymentMethod?: string }) => void | Promise<void>;
 }
 
 export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
@@ -43,7 +43,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
 
     setLoading(true);
     try {
-      onSubmit({
+      await onSubmit({
         category,
         amount: parseFloat(amount),
         description,

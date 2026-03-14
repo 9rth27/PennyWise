@@ -11,7 +11,7 @@ export default function AddExpensePage() {
   const { addExpense } = useExpenses();
   const router = useRouter();
 
-  const handleSubmit = (data: { category: string; amount: number; description?: string }) => {
+  const handleSubmit = async (data: { category: string; amount: number; description?: string }) => {
     const newExpense = {
       id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
       ...data,
@@ -19,7 +19,11 @@ export default function AddExpensePage() {
       time: new Date().toLocaleTimeString(),
     };
     
-    addExpense(newExpense);
+    const isAdded = await addExpense(newExpense);
+    if (!isAdded) {
+      return;
+    }
+
     toast.success(`✓ Expense of ₹${data.amount} added to ${data.category}`, {
       duration: 3000,
     });

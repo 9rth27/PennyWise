@@ -1,11 +1,85 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
-  const response = NextResponse.next();
+const PUBLIC_ROUTES = ['/login', '/signup', '/help', '/auth/callback'];
+const AUTH_ROUTES = ['/login', '/signup'];
+
+function resolveOrigin(url?: string) {
+  if (!url) return '';
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
+}
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+function isAuthRoute(pathname: string) {
+  return AUTH_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+function isStaticRoute(pathname: string) {
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    /\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|map|js|css)$/.test(pathname)
+  );
+}
+
+function buildContentSecurityPolicy() {
+  const supabaseOrigin = resolveOrigin(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+
+  const connectSrc = [
+    "'self'",
+    'https://api.groq.com',
+    'https://api.resend.com',
+  ];
+
+  if (supabaseOrigin) {
+    connectSrc.push(supabaseOrigin);
+    if (supabaseOrigin.startsWith('https://')) {
+      connectSrc.push(supabaseOrigin.replace(/^https:/, 'wss:'));
+    }
+  }
+
+  if (turnstileEnabled) {
+    connectSrc.push('https://challenges.cloudflare.com');
+  }
+
+  const scriptSrc = ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
+  const frameSrc = ["'self'"];
+
+  if (turnstileEnabled) {
+    scriptSrc.push('https://challenges.cloudflare.com');
+    frameSrc.push('https://challenges.cloudflare.com');
+  }
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(' ')}`,
+    "style-src 'self' 'unsafe-inline'",
+    `connect-src ${connectSrc.join(' ')}`,
+    "img-src 'self' data: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `frame-src ${frameSrc.join(' ')}`,
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ');
+}
+
+function applyResponseHeaders(response: NextResponse) {
+  const appOrigin = resolveOrigin(process.env.NEXT_PUBLIC_APP_URL) || 'http://localhost:3000';
 
   // CORS Headers
-  response.headers.set('Access-Control-Allow-Origin', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+  response.headers.set('Access-Control-Allow-Origin', appOrigin);
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   response.headers.set('Access-Control-Max-Age', '86400');
@@ -16,37 +90,11 @@ export function proxy(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  response.headers.set('Content-Security-Policy', 
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "font-src 'self' data: https://fonts.gstatic.com; " +
-    "connect-src 'self' https://api.groq.com; " +
-    "frame-ancestors 'none'; " +
-    "base-uri 'self'; " +
-    "form-action 'self';"
-  );
-
-  // Prevent MIME type sniffing
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-
-  // Clickjacking protection
-  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-
-  // Referrer Policy
+  response.headers.set('Content-Security-Policy', buildContentSecurityPolicy());
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-  // Permissions Policy
-  response.headers.set('Permissions-Policy', 
-    'geolocation=(), ' +
-    'microphone=(), ' +
-    'camera=(), ' +
-    'payment=(), ' +
-    'usb=(), ' +
-    'magnetometer=(), ' +
-    'gyroscope=(), ' +
-    'accelerometer=()'
+  response.headers.set(
+    'Permissions-Policy',
+    'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()',
   );
 
   // Remove sensitive server headers
@@ -54,6 +102,62 @@ export function proxy(request: NextRequest) {
   response.headers.delete('X-Powered-By');
 
   return response;
+}
+
+export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey && !isStaticRoute(pathname) && !pathname.startsWith('/api/')) {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user && !isPublicRoute(pathname)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/login';
+      redirectUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+      return applyResponseHeaders(NextResponse.redirect(redirectUrl));
+    }
+
+    if (user && isAuthRoute(pathname)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/';
+      redirectUrl.search = '';
+      return applyResponseHeaders(NextResponse.redirect(redirectUrl));
+    }
+
+    return applyResponseHeaders(response);
+  }
+
+  return applyResponseHeaders(response);
 }
 
 export const config = {
