@@ -86,7 +86,7 @@ function DashboardContent() {
       <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="font-black text-3xl md:text-4xl mb-2">{getGreeting()}, User!</h1>
-          <p className="text-gray-600 font-bold text-base md:text-lg">Login to save your progress and sync your expenses across devices</p>
+          <p className="text-gray-600 font-bold text-base md:text-lg">Log in now to save your progress securely and access your expenses on every device</p>
         </div>
         <Link href="/add" className="w-full md:w-auto text-center border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap">
           + Add Expense

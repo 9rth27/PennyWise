@@ -41,17 +41,6 @@ export default function HelpPage() {
     },
   ];
 
-  const tips = [
-    '📱 Use the Quick Add buttons for frequently spent amounts like your daily coffee or lunch cost.',
-    '🎯 Set realistic monthly budgets based on your income and necessary expenses.',
-    '📊 Check the Analytics dashboard weekly to stay aware of your spending patterns.',
-    '🏷️ Use detailed descriptions when adding expenses for better organization.',
-    '⚠️ Pay attention to AI Insights alerts to catch overspending early.',
-    '📈 Track spending trends over time to identify opportunities to save money.',
-    '🔄 Review and adjust your budget monthly based on your actual spending.',
-    '💡 Create multiple budgets or sub-categories if you have complex spending patterns.',
-  ];
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -59,17 +48,6 @@ export default function HelpPage() {
         <h1 className="font-black text-4xl mb-2">Help & Documentation</h1>
         <p className="text-gray-600 font-bold text-lg">Learn how to use PennyWise to manage your finances effectively</p>
       </div>
-
-      {/* Tips & Tricks */}
-      <DashboardCard title="Tips & Tricks">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {tips.map((tip, idx) => (
-            <div key={idx} className="border-2 border-black rounded-lg p-3 bg-blue-50">
-              <p className="text-sm font-bold text-black">{tip}</p>
-            </div>
-          ))}
-        </div>
-      </DashboardCard>
 
       {/* FAQ */}
       <DashboardCard title="Frequently Asked Questions">
