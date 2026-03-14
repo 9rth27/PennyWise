@@ -90,19 +90,19 @@ function DashboardContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-4 border-black rounded-xl p-8 max-sm:p-6 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between gap-6 max-sm:flex-col max-sm:items-start">
+      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="font-black text-4xl max-sm:text-2xl mb-2">{getGreeting()}, User!</h1>
-          <p className="text-gray-600 font-bold text-lg max-sm:text-sm max-w-2xl">Log in now to save your progress securely and access your expenses on every device</p>
+          <h1 className="font-black text-3xl md:text-4xl max-sm:text-2xl mb-2">{getGreeting()}, User!</h1>
+          <p className="text-gray-600 font-bold text-base md:text-lg max-sm:text-sm max-w-2xl">Log in now to save your progress securely and access your expenses on every device</p>
         </div>
-        <Link href="/add" className="w-auto max-sm:w-full text-center border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap">
+        <Link href="/add" className="w-full md:w-auto text-center border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap">
           + Add Expense
         </Link>
       </div>
 
       {/* Budget Overview */}
       <DashboardCard title="Monthly Budget Overview">
-        <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border-4 border-black rounded-lg p-4 bg-gradient-to-br from-emerald-500 to-green-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-sm font-bold text-green-100 mb-1">BUDGET</p>
             <p className="text-3xl max-sm:text-2xl font-black text-white break-words">₹{monthlyBudget.toLocaleString()}</p>
@@ -133,7 +133,7 @@ function DashboardContent() {
       <TodaySnapshot totalSpent={totalTodaySpent} transactionCount={todayExpenses.length} />
 
       {/* Quick Insights */}
-      <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <DashboardCard title="Top Spending Category">
           <div className="flex items-center justify-between max-sm:flex-col max-sm:items-start max-sm:gap-4">
             <div>
@@ -170,14 +170,14 @@ function DashboardContent() {
       <ExpenseList expenses={expenses} title="Recent Activity" onDelete={handleDelete} />
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
-        <Link href="/add" className="border-4 border-black rounded-xl p-6 max-sm:p-4 bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all text-center font-bold text-base max-sm:text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <Link href="/add" className="border-4 border-black rounded-xl p-4 md:p-6 bg-black text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all text-center font-bold text-sm md:text-base">
           ➕ Add Expense
         </Link>
-        <Link href="/expenses" className="border-4 border-black rounded-xl p-6 max-sm:p-4 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-base max-sm:text-sm">
+        <Link href="/expenses" className="border-4 border-black rounded-xl p-4 md:p-6 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-sm md:text-base">
           📊 See All Expenses
         </Link>
-        <Link href="/analytics" className="border-4 border-black rounded-xl p-6 max-sm:p-4 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-base max-sm:text-sm">
+        <Link href="/analytics" className="border-4 border-black rounded-xl p-4 md:p-6 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] transition-all text-center font-bold text-sm md:text-base sm:col-span-2 md:col-span-1">
           📈 Full Analytics
         </Link>
       </div>
