@@ -46,10 +46,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-10rem)] bg-[#f3f4f6] flex items-center justify-center p-4 rounded-3xl">
-      <div className="max-w-md w-full bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
+    <div className="min-h-[calc(100dvh-10rem)] bg-[#f3f4f6] flex items-center justify-center p-4 sm:p-6 rounded-3xl">
+      <div className="max-w-md w-full bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black tracking-tighter mb-2 text-black">Reset Password</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter mb-2 text-black">Reset Password</h1>
           <p className="text-gray-600 font-medium">Enter your account email and we’ll send a reset link.</p>
         </div>
 
