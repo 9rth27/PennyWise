@@ -55,7 +55,7 @@ export default function SignupPage() {
       }
 
       toast.success('Account created. Please verify your email to continue.');
-      router.push('/login');
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } finally {
       setIsLoading(false);
     }

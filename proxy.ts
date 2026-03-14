@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_ROUTES = ['/login', '/signup', '/help', '/auth/callback'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/help', '/auth/callback'];
 const AUTH_ROUTES = ['/login', '/signup'];
 
 function resolveOrigin(url?: string) {

@@ -2,15 +2,14 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const supabase = useMemo(() => {
@@ -21,7 +20,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleResetPassword = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!supabase) {
@@ -29,20 +28,29 @@ export default function LoginPage() {
       return;
     }
 
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      const { error } = await supabase.auth.updateUser({
         password,
       });
 
       if (error) {
-        toast.error(error.message || 'Unable to log in right now.');
+        toast.error(error.message || 'Unable to reset password right now.');
         return;
       }
 
-      toast.success('Logged in successfully.');
-      router.push(searchParams.get('next') || '/');
+      toast.success('Password updated successfully.');
+      router.push('/');
       router.refresh();
     } finally {
       setIsLoading(false);
@@ -53,42 +61,39 @@ export default function LoginPage() {
     <div className="h-[calc(100vh-10rem)] bg-[#f3f4f6] flex items-center justify-center p-4 rounded-3xl">
       <div className="max-w-md w-full bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black tracking-tighter mb-2 text-black">Welcome Back</h1>
-          <p className="text-gray-600 font-medium">Log in to PennyWise to manage your expenses.</p>
+          <h1 className="text-4xl font-black tracking-tighter mb-2 text-black">Set New Password</h1>
+          <p className="text-gray-600 font-medium">Choose a strong new password for your account.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleResetPassword} className="space-y-6">
           <div className="space-y-2">
-            <label className="font-bold text-black" htmlFor="email">Email</label>
-            <input 
-              id="email" 
-              type="email" 
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              placeholder="you@example.com" 
+            <label className="font-bold text-black" htmlFor="password">New Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="new-password"
+              placeholder="••••••••"
               required
+              minLength={8}
               className="w-full p-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
             />
           </div>
-          
+
           <div className="space-y-2">
-            <label className="font-bold text-black" htmlFor="password">Password</label>
-            <input 
-              id="password" 
-              type="password" 
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-              placeholder="••••••••" 
+            <label className="font-bold text-black" htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              autoComplete="new-password"
+              placeholder="••••••••"
               required
+              minLength={8}
               className="w-full p-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
             />
-            <div className="text-right mt-1">
-              <Link href="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                Forgot password?
-              </Link>
-            </div>
           </div>
 
           <button
@@ -96,15 +101,15 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
           >
-            {isLoading ? 'Logging in...' : 'Log In'}
+            {isLoading ? 'Updating...' : 'Update Password'}
           </button>
         </form>
 
         <div className="mt-8 text-center border-t-2 border-gray-100 pt-6">
           <p className="text-gray-600 font-bold">
-            Don't have an account?{' '}
-            <Link href="/signup" className="text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-4">
-              Sign up
+            Back to{' '}
+            <Link href="/login" className="text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-4">
+              Log in
             </Link>
           </p>
         </div>
