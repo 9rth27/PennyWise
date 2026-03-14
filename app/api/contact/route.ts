@@ -38,6 +38,49 @@ function getClientIp(req: NextRequest): string {
   return req.headers.get('x-real-ip') || '127.0.0.1';
 }
 
+async function isAllowedByRateLimit(identifier: string, maxRequests: number, windowMs: number): Promise<boolean> {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!redisUrl || !redisToken) {
+    return rateLimit(identifier, maxRequests, windowMs);
+  }
+
+  try {
+    const redisHeaders = {
+      Authorization: `Bearer ${redisToken}`,
+    };
+
+    const key = `pennywise:contact:${identifier}`;
+    const encodedKey = encodeURIComponent(key);
+    const incrementResponse = await fetch(`${redisUrl}/incr/${encodedKey}`, {
+      method: 'POST',
+      headers: redisHeaders,
+      cache: 'no-store',
+    });
+
+    if (!incrementResponse.ok) {
+      return rateLimit(identifier, maxRequests, windowMs);
+    }
+
+    const incrementData = (await incrementResponse.json()) as { result?: number };
+    const currentCount = Number(incrementData.result || 0);
+
+    if (currentCount === 1) {
+      const ttlSeconds = Math.ceil(windowMs / 1000);
+      await fetch(`${redisUrl}/expire/${encodedKey}/${ttlSeconds}`, {
+        method: 'POST',
+        headers: redisHeaders,
+        cache: 'no-store',
+      });
+    }
+
+    return currentCount <= maxRequests;
+  } catch {
+    return rateLimit(identifier, maxRequests, windowMs);
+  }
+}
+
 function cleanText(value: string): string {
   return value
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ')
@@ -141,7 +184,7 @@ export async function POST(req: NextRequest) {
       return responseJson({ error: 'Payload too large.' }, 413);
     }
 
-    if (!rateLimit(`contact:ip:${ip}`, CONTACT_RATE_LIMIT, CONTACT_RATE_WINDOW_MS)) {
+    if (!(await isAllowedByRateLimit(`ip:${ip}`, CONTACT_RATE_LIMIT, CONTACT_RATE_WINDOW_MS))) {
       return responseJson(
         { error: 'Too many requests. Please try again later.' },
         429,
@@ -171,7 +214,7 @@ export async function POST(req: NextRequest) {
       return responseJson({ error: validated.error }, 400);
     }
 
-    if (!rateLimit(`contact:email:${validated.email}`, 3, CONTACT_RATE_WINDOW_MS)) {
+    if (!(await isAllowedByRateLimit(`email:${validated.email}`, 3, CONTACT_RATE_WINDOW_MS))) {
       return responseJson(
         { error: 'Please wait a moment before sending again.' },
         429,
