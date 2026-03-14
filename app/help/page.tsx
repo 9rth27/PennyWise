@@ -147,9 +147,6 @@ export default function HelpPage() {
             📧 Email Support
           </button>
           <button className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors">
-            💬 Chat with us
-          </button>
-          <button className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors">
             📱 Contact Form
           </button>
         </div>
