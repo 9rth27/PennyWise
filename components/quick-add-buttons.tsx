@@ -43,14 +43,14 @@ export function QuickAddButtons({ onAdd }: QuickAddButtonsProps) {
 
   return (
     <DashboardCard title="Quick Add Expense">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-sm:gap-3">
         {QUICK_CATEGORIES.map((category, index) => (
           <button
             key={category.id}
             onClick={() => onAdd(category.id, amounts[category.id] || DEFAULT_AMOUNTS[category.id])}
-            className={`border-3 ${category.borderColor} rounded-xl p-3 sm:p-4 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center min-h-32 sm:min-h-36 ${index === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
+            className={`border-3 ${category.borderColor} rounded-xl p-4 max-sm:p-3 ${category.bgColor} ${category.hoverColor} ${category.textColor} font-bold text-sm text-center transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.2)] flex flex-col items-center justify-center max-sm:min-h-32 ${index === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
           >
-            <div className="text-2xl sm:text-3xl mb-2">{category.emoji}</div>
+            <div className="text-3xl max-sm:text-2xl mb-2">{category.emoji}</div>
             <div className="font-bold text-xs md:text-sm">{category.label}</div>
             <div className="mt-1 font-black text-sm">₹{amounts[category.id] || DEFAULT_AMOUNTS[category.id]}</div>
           </button>

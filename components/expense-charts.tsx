@@ -71,15 +71,15 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
 
 
       <DashboardCard title="Daily Spending Trend">
-        <div className="w-full h-72 sm:h-80 flex items-center justify-center">
+        <div className="w-full h-80 max-sm:h-72 flex items-center justify-center">
           {dateData.length === 0 ? (
             <p className="text-gray-600 font-bold">No data available</p>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dateData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} minTickGap={20} />
-                <YAxis width={36} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="date" />
+                <YAxis />
                 <Tooltip formatter={(value: any) => `₹${value.toFixed(2)}`} />
                 <Bar dataKey="amount" fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -93,13 +93,13 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
           {categoryData.map((item, index) => (
             <div
               key={index}
-              className="border-2 border-black rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white"
+              className="border-2 border-black rounded-lg p-3 flex items-center justify-between bg-white max-sm:flex-col max-sm:items-start max-sm:gap-2"
             >
               <div>
                 <p className="font-bold text-black">{item.category}</p>
                 <p className="text-sm text-gray-600">{item.count} transaction{item.count !== 1 ? 's' : ''}</p>
               </div>
-              <p className="font-black text-lg break-words">₹{item.amount.toFixed(2)}</p>
+              <p className="font-black text-lg max-sm:break-words">₹{item.amount.toFixed(2)}</p>
             </div>
           ))}
         </div>
