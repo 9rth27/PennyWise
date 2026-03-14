@@ -265,24 +265,24 @@ export default function HelpPage() {
       </DashboardCard>
 
       {/* Contact Support */}
-      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-gray-900 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-6">
+      <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white text-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-6">
         <div className="space-y-2">
-          <h2 className="font-black text-2xl">Need More Help?</h2>
-          <p className="font-bold text-base md:text-lg">If you have questions or feedback, feel free to reach out. We're here to help!</p>
+          <h2 className="font-black text-2xl text-black">Need More Help?</h2>
+          <p className="font-bold text-base md:text-lg text-gray-700">If you have questions or feedback, feel free to reach out. We're here to help!</p>
         </div>
 
         <div className="flex gap-3 flex-wrap">
           <button
             type="button"
             onClick={openEmailSupport}
-            className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-white text-black hover:bg-gray-200 transition-colors"
+            className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-black text-white hover:bg-gray-800 transition-colors"
           >
             📧 Email Support
           </button>
           <button
             type="button"
             onClick={() => setShowContactForm((prev) => !prev)}
-            className="border-2 border-white rounded-lg px-6 py-2 font-bold text-white hover:bg-gray-800 transition-colors"
+            className="border-2 border-black rounded-lg px-6 py-2 font-bold text-black hover:bg-gray-100 transition-colors"
           >
             📱 {showContactForm ? 'Hide Form' : 'Contact Form'}
           </button>
@@ -291,7 +291,7 @@ export default function HelpPage() {
         {showContactForm && (
           <form
             onSubmit={handleContactFormSubmit}
-            className="space-y-4 border-4 border-black rounded-xl p-5 md:p-6 bg-white text-black"
+            className="space-y-4 border-4 border-black rounded-xl p-5 md:p-6 bg-gray-50 text-black"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
