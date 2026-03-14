@@ -20,7 +20,6 @@ export default function HelpPage() {
     website: '',
     turnstileToken: '',
   });
-  const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || '';
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const faqs = [
@@ -68,17 +67,6 @@ export default function HelpPage() {
     '🔄 Review and adjust your budget monthly based on your actual spending.',
     '💡 Create multiple budgets or sub-categories if you have complex spending patterns.',
   ];
-
-  const openEmailSupport = () => {
-    if (!supportEmail) {
-      toast.error('Support email is not configured yet.');
-      return;
-    }
-
-    const subject = encodeURIComponent('PennyWise Support Request');
-    const body = encodeURIComponent('Hi PennyWise team,\n\nI need help with:\n');
-    window.location.href = `mailto:${supportEmail}?subject=${subject}&body=${body}`;
-  };
 
   const resetContactForm = () => {
     setContactForm({
@@ -272,13 +260,6 @@ export default function HelpPage() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={openEmailSupport}
-            className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-black text-white hover:bg-gray-800 transition-colors"
-          >
-            📧 Email Support
-          </button>
           <button
             type="button"
             onClick={() => setShowContactForm((prev) => !prev)}
