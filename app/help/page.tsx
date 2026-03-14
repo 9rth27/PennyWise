@@ -5,6 +5,14 @@ import { DashboardCard } from '@/components/dashboard-card';
 
 export default function HelpPage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
+  const supportEmail = 'parthpatil1958@gmail.com';
 
   const faqs = [
     {
@@ -51,6 +59,38 @@ export default function HelpPage() {
     '🔄 Review and adjust your budget monthly based on your actual spending.',
     '💡 Create multiple budgets or sub-categories if you have complex spending patterns.',
   ];
+
+  const openEmailSupport = () => {
+    const subject = encodeURIComponent('PennyWise Support Request');
+    const body = encodeURIComponent('Hi PennyWise team,\n\nI need help with:\n');
+    window.location.href = `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+  };
+
+  const handleContactInputChange = (
+    field: 'name' | 'email' | 'subject' | 'message',
+    value: string,
+  ) => {
+    setContactForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleContactFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const subject = encodeURIComponent(contactForm.subject.trim());
+    const body = encodeURIComponent(
+      `Name: ${contactForm.name.trim()}\nEmail: ${contactForm.email.trim()}\n\nMessage:\n${contactForm.message.trim()}`,
+    );
+
+    window.location.href = `mailto:${supportEmail}?subject=${subject}&body=${body}`;
+
+    setContactForm({
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+    });
+    setShowContactForm(false);
+  };
 
   return (
     <div className="space-y-8">
@@ -143,13 +183,72 @@ export default function HelpPage() {
         <h2 className="font-black text-2xl mb-3">Need More Help?</h2>
         <p className="mb-4 font-bold">If you have questions or feedback, feel free to reach out. We're here to help!</p>
         <div className="flex gap-3 flex-wrap">
-          <button className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors">
+          <button
+            type="button"
+            onClick={openEmailSupport}
+            className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+          >
             📧 Email Support
           </button>
-          <button className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors">
+          <button
+            type="button"
+            onClick={() => setShowContactForm((prev) => !prev)}
+            className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+          >
             📱 Contact Form
           </button>
         </div>
+
+        {showContactForm && (
+          <form
+            onSubmit={handleContactFormSubmit}
+            className="mt-5 space-y-3 border-2 border-white rounded-lg p-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                type="text"
+                value={contactForm.name}
+                onChange={(event) => handleContactInputChange('name', event.target.value)}
+                placeholder="Your name"
+                required
+                className="border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+              />
+              <input
+                type="email"
+                value={contactForm.email}
+                onChange={(event) => handleContactInputChange('email', event.target.value)}
+                placeholder="Your email"
+                required
+                className="border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+              />
+            </div>
+
+            <input
+              type="text"
+              value={contactForm.subject}
+              onChange={(event) => handleContactInputChange('subject', event.target.value)}
+              placeholder="Subject"
+              required
+              className="w-full border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+            />
+
+            <textarea
+              value={contactForm.message}
+              onChange={(event) => handleContactInputChange('message', event.target.value)}
+              placeholder="How can we help?"
+              required
+              rows={5}
+              className="w-full border-2 border-white rounded-lg px-3 py-2 bg-black text-white placeholder:text-gray-300 font-bold"
+            />
+
+            <button
+              type="submit"
+              className="border-2 border-white rounded-lg px-6 py-2 font-bold hover:bg-gray-800 transition-colors"
+            >
+              Send Message
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
