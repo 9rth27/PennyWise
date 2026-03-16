@@ -62,14 +62,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-[calc(100dvh-10rem)] bg-[#f3f4f6] flex items-center justify-center p-4 sm:p-6 rounded-3xl">
-      <div className="max-w-md w-full bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-6 sm:p-8">
-        <div className="mb-8 text-center">
+    <div className="min-h-[calc(100dvh-11rem)] bg-[#f3f4f6] flex items-center justify-center p-3 sm:p-4 rounded-3xl overflow-hidden">
+      <div className="max-w-md w-full bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-5 sm:p-6">
+        <div className="mb-6 text-center">
           <h1 className="text-3xl sm:text-4xl font-black tracking-tighter mb-2 text-black">Create Account</h1>
           <p className="text-gray-600 font-medium">Join PennyWise to take control of your finances.</p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-6">
+        <form onSubmit={handleSignup} className="space-y-4">
           <div className="space-y-2">
             <label className="font-bold text-black" htmlFor="name">Full Name</label>
             <input 
@@ -122,7 +122,7 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t-2 border-gray-100 pt-6">
+        <div className="mt-6 text-center border-t-2 border-gray-100 pt-4">
           <p className="text-gray-600 font-bold">
             Already have an account?{' '}
             <Link href="/login" className="text-yellow-600 hover:text-yellow-800 underline decoration-2 underline-offset-4">
