@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import Script from 'next/script';
+import React, { useState } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
 
@@ -9,18 +8,12 @@ export default function HelpPage() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isTurnstileReady, setIsTurnstileReady] = useState(false);
-  const [turnstileWidgetId, setTurnstileWidgetId] = useState<string | null>(null);
-  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
     subject: '',
     message: '',
-    website: '',
-    turnstileToken: '',
   });
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const faqs = [
     {
@@ -74,50 +67,11 @@ export default function HelpPage() {
       email: '',
       subject: '',
       message: '',
-      website: '',
-      turnstileToken: '',
     });
-
-    const turnstile = (window as any).turnstile;
-    if (turnstileWidgetId && turnstile?.reset) {
-      turnstile.reset(turnstileWidgetId);
-    }
   };
 
-  useEffect(() => {
-    if (!showContactForm || !turnstileSiteKey || !isTurnstileReady || !turnstileContainerRef.current) {
-      return;
-    }
-
-    const turnstile = (window as any).turnstile;
-    if (!turnstile) {
-      return;
-    }
-
-    if (turnstileWidgetId) {
-      turnstile.reset(turnstileWidgetId);
-      return;
-    }
-
-    const widgetId = turnstile.render(turnstileContainerRef.current, {
-      sitekey: turnstileSiteKey,
-      theme: 'light',
-      callback: (token: string) => {
-        setContactForm((prev) => ({ ...prev, turnstileToken: token }));
-      },
-      'expired-callback': () => {
-        setContactForm((prev) => ({ ...prev, turnstileToken: '' }));
-      },
-      'error-callback': () => {
-        setContactForm((prev) => ({ ...prev, turnstileToken: '' }));
-      },
-    });
-
-    setTurnstileWidgetId(widgetId);
-  }, [showContactForm, turnstileSiteKey, isTurnstileReady, turnstileWidgetId]);
-
   const handleContactInputChange = (
-    field: 'name' | 'email' | 'subject' | 'message' | 'website' | 'turnstileToken',
+    field: 'name' | 'email' | 'subject' | 'message',
     value: string,
   ) => {
     setContactForm((prev) => ({ ...prev, [field]: value }));
@@ -125,11 +79,6 @@ export default function HelpPage() {
 
   const handleContactFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (turnstileSiteKey && !contactForm.turnstileToken) {
-      toast.error('Please complete the verification check.');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
@@ -160,14 +109,6 @@ export default function HelpPage() {
 
   return (
     <div className="space-y-8">
-      {turnstileSiteKey && (
-        <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-          strategy="afterInteractive"
-          onLoad={() => setIsTurnstileReady(true)}
-        />
-      )}
-
       {/* Header */}
       <div className="border-4 border-black rounded-xl p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <h1 className="font-black text-4xl mb-2">Help & Documentation</h1>
@@ -295,16 +236,6 @@ export default function HelpPage() {
 
             <input
               type="text"
-              value={contactForm.website}
-              onChange={(event) => handleContactInputChange('website', event.target.value)}
-              placeholder="Website"
-              tabIndex={-1}
-              autoComplete="off"
-              className="hidden"
-            />
-
-            <input
-              type="text"
               value={contactForm.subject}
               onChange={(event) => handleContactInputChange('subject', event.target.value)}
               placeholder="Subject"
@@ -321,15 +252,9 @@ export default function HelpPage() {
               className="w-full border-2 border-black rounded-lg px-3 py-2 bg-white text-black placeholder:text-gray-500 font-bold"
             />
 
-            {turnstileSiteKey && (
-              <div className="pt-1">
-                <div ref={turnstileContainerRef} />
-              </div>
-            )}
-
             <button
               type="submit"
-              disabled={isSubmitting || (Boolean(turnstileSiteKey) && !contactForm.turnstileToken)}
+              disabled={isSubmitting}
               className="border-2 border-black rounded-lg px-6 py-2 font-bold bg-black text-white hover:bg-gray-800 transition-colors"
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}

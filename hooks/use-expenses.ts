@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Expense } from '@/components/expense-list';
-import { validateBudget, validateExpense, generateSecureId } from '@/lib/security';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -34,6 +33,28 @@ function sortExpenses(items: Expense[]) {
     const secondDate = new Date(`${second.date}T${second.time}`).getTime();
     return secondDate - firstDate;
   });
+}
+
+function createExpenseId() {
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID().replace(/-/g, '');
+    }
+
+    const bytes = new Uint8Array(12);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2, 12)}`;
+}
+
+function readBudget(value: unknown) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+  return amount;
 }
 
 export function useExpenses() {
@@ -80,15 +101,15 @@ export function useExpenses() {
     }
 
     const safeExpenses = Array.isArray(expensesRows)
-      ? expensesRows
-          .map((row) => mapExpenseRow(row as ExpenseRow))
-          .filter((expense) => validateExpense(expense))
+      ? expensesRows.map((row) => mapExpenseRow(row as ExpenseRow))
       : [];
 
     setExpenses(sortExpenses(safeExpenses));
 
-    if (!settingsError && settingsRow && validateBudget((settingsRow as any).monthly_budget)) {
-      setMonthlyBudget(Number((settingsRow as any).monthly_budget));
+    const parsedBudget = readBudget((settingsRow as any)?.monthly_budget);
+
+    if (!settingsError && settingsRow && parsedBudget !== null) {
+      setMonthlyBudget(parsedBudget);
     } else {
       setMonthlyBudget(DEFAULT_MONTHLY_BUDGET);
     }
@@ -113,9 +134,13 @@ export function useExpenses() {
   }, [loadExpenses, supabase]);
 
   const addExpense = useCallback(async (expense: Expense) => {
-    if (!validateExpense(expense)) {
-      console.error('[Security] Invalid expense rejected');
+    if (!expense || !expense.category || !expense.date || !expense.time) {
       toast.error('Invalid expense details.');
+      return false;
+    }
+
+    if (!Number.isFinite(Number(expense.amount)) || Number(expense.amount) <= 0) {
+      toast.error('Invalid expense amount.');
       return false;
     }
 
@@ -134,7 +159,7 @@ export function useExpenses() {
     }
 
     const payload = {
-      id: expense.id || generateSecureId(),
+      id: expense.id || createExpenseId(),
       user_id: user.id,
       category: String(expense.category).toLowerCase().trim(),
       amount: Number(expense.amount),
@@ -160,8 +185,7 @@ export function useExpenses() {
   }, [supabase]);
 
   const deleteExpense = useCallback(async (id: string) => {
-    if (typeof id !== 'string' || id.length < 8 || id.length > 64) {
-      console.error('[Security] Invalid ID format');
+    if (!id) {
       return false;
     }
 
@@ -186,8 +210,9 @@ export function useExpenses() {
   }, [supabase]);
 
   const updateBudget = useCallback(async (amount: number) => {
-    if (!validateBudget(amount)) {
-      console.error('[Security] Invalid budget amount');
+    const parsedBudget = readBudget(amount);
+    if (parsedBudget === null) {
+      toast.error('Invalid budget amount.');
       return false;
     }
 
@@ -210,7 +235,7 @@ export function useExpenses() {
       .upsert(
         {
           user_id: user.id,
-          monthly_budget: amount,
+          monthly_budget: parsedBudget,
         },
         {
           onConflict: 'user_id',
@@ -223,7 +248,7 @@ export function useExpenses() {
       return false;
     }
 
-    setMonthlyBudget(amount);
+    setMonthlyBudget(parsedBudget);
     return true;
   }, [supabase]);
 
