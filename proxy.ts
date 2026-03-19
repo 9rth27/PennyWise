@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/help', '/auth/callback'];
+const PUBLIC_ROUTES = ['/', '/expenses', '/analytics', '/settings', '/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/help', '/auth/callback'];
 const AUTH_ROUTES = ['/login', '/signup'];
 
 function resolveOrigin(url?: string) {
@@ -15,7 +15,7 @@ function resolveOrigin(url?: string) {
 }
 
 function isPublicRoute(pathname: string) {
-  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  return PUBLIC_ROUTES.some((route) => pathname === route || (route !== '/' && pathname.startsWith(`${route}/`)));
 }
 
 function isAuthRoute(pathname: string) {
@@ -113,10 +113,28 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Skip heavy logic for static assets
+  if (isStaticRoute(pathname)) {
+    return applyResponseHeaders(response);
+  }
 
-  if (supabaseUrl && supabaseAnonKey && !isStaticRoute(pathname) && !pathname.startsWith('/api/')) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  // If supabase isn't configured, just pass through
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return applyResponseHeaders(response);
+  }
+
+  // If it's a public route, pass through without auth check
+  const publicCheck = isPublicRoute(pathname);
+  console.log(`[proxy] pathname=${pathname} isPublic=${publicCheck} PUBLIC_ROUTES=${JSON.stringify(PUBLIC_ROUTES)}`);
+  if (publicCheck || pathname.startsWith('/api/')) {
+    return applyResponseHeaders(response);
+  }
+
+  // Protected route — check auth
+  try {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
@@ -140,7 +158,7 @@ export async function proxy(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user && !isPublicRoute(pathname)) {
+    if (!user) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = '/login';
       redirectUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
@@ -153,8 +171,8 @@ export async function proxy(request: NextRequest) {
       redirectUrl.search = '';
       return applyResponseHeaders(NextResponse.redirect(redirectUrl));
     }
-
-    return applyResponseHeaders(response);
+  } catch {
+    // On any auth error, fail open and let the page handle it
   }
 
   return applyResponseHeaders(response);

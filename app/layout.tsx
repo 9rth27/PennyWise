@@ -112,7 +112,7 @@ export default function RootLayout({
           content={contentSecurityPolicy}
         />
       </head>
-      <body className={`${geist.className} font-sans antialiased bg-white`}>
+      <body className={`${geist.className} font-sans antialiased bg-white`} suppressHydrationWarning>
         <Toaster position="bottom-right" richColors />
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 py-8">

@@ -67,8 +67,7 @@ export function validateExpense(expense: any): boolean {
   const { category, amount, date, time } = expense;
   
   // Validate category (whitelist allowed categories)
-  const allowedCategories = ['tea', 'lunch', 'auto', 'groceries', 'misc', 'entertainment', 'utilities', 'health'];
-  if (!category || !allowedCategories.includes(String(category).toLowerCase())) return false;
+  if (!category || typeof category !== 'string' || category.trim().length === 0) return false;
   
   // Validate amount
   if (typeof amount !== 'number' || amount <= 0 || amount > 1000000) return false;
