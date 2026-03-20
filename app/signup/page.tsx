@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { supabase } from '@/src/supabaseClient';
 
 export default function SignupPage() {
   return (
@@ -48,7 +48,6 @@ function SignupPageContent() {
     setFormError(null);
     setIsGoogleLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -86,7 +85,6 @@ function SignupPageContent() {
 
     setIsLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,

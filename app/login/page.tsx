@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { supabase } from '@/src/supabaseClient';
 
 export default function LoginPage() {
   return (
@@ -48,7 +48,6 @@ function LoginPageContent() {
     setFormError(null);
     setIsGoogleLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -93,7 +92,6 @@ function LoginPageContent() {
   // Auto-redirect if already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const supabase = createSupabaseBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         router.push('/');
@@ -108,7 +106,6 @@ function LoginPageContent() {
 
     setIsLoading(true);
     try {
-      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
