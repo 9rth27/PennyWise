@@ -20,9 +20,29 @@ create index if not exists expenses_user_date_idx on public.expenses(user_id, da
 create table if not exists public.user_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   monthly_budget integer not null default 10000 check (monthly_budget > 0),
+  currency text not null default 'INR',
+  theme text not null default 'dark',
+  notifications boolean not null default true,
+  email_alerts boolean not null default false,
+  default_category text not null default 'misc',
+  decimal_places smallint not null default 2 check (decimal_places between 0 and 2),
+  date_format text not null default 'DD/MM/YYYY',
+  quick_add_amounts jsonb not null default '{"tea":50,"lunch":200,"auto":150,"groceries":500,"misc":100}'::jsonb,
+  custom_categories jsonb not null default '[{"id":"tea","label":"Tea/Coffee","color":"amber"},{"id":"lunch","label":"Lunch/Dinner","color":"orange"},{"id":"auto","label":"Auto/Cab","color":"blue"},{"id":"groceries","label":"Groceries","color":"green"},{"id":"misc","label":"Misc","color":"purple"}]'::jsonb,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.user_settings
+  add column if not exists currency text not null default 'INR',
+  add column if not exists theme text not null default 'dark',
+  add column if not exists notifications boolean not null default true,
+  add column if not exists email_alerts boolean not null default false,
+  add column if not exists default_category text not null default 'misc',
+  add column if not exists decimal_places smallint not null default 2,
+  add column if not exists date_format text not null default 'DD/MM/YYYY',
+  add column if not exists quick_add_amounts jsonb not null default '{"tea":50,"lunch":200,"auto":150,"groceries":500,"misc":100}'::jsonb,
+  add column if not exists custom_categories jsonb not null default '[{"id":"tea","label":"Tea/Coffee","color":"amber"},{"id":"lunch","label":"Lunch/Dinner","color":"orange"},{"id":"auto","label":"Auto/Cab","color":"blue"},{"id":"groceries","label":"Groceries","color":"green"},{"id":"misc","label":"Misc","color":"purple"}]'::jsonb;
 
 create or replace function public.set_updated_at()
 returns trigger

@@ -1,17 +1,34 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ExpenseList, Expense } from '@/components/expense-list';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
 
 import { useExpenses } from '@/hooks/use-expenses';
+import { useUserSettings } from '@/hooks/use-user-settings';
 
 export default function ExpensesPage() {
   const { expenses, deleteExpense } = useExpenses();
+  const { settings } = useUserSettings();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const categories = ['all', 'tea', 'lunch', 'auto', 'groceries', 'misc', 'entertainment', 'utilities', 'health'];
+  const categories = useMemo(
+    () => [
+      { id: 'all', label: 'All Categories' },
+      ...settings.customCategories.map((category) => ({
+        id: category.id,
+        label: category.label,
+      })),
+    ],
+    [settings.customCategories],
+  );
+
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !categories.some((category) => category.id === selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [categories, selectedCategory]);
 
   const { filteredExpenses, totalSpent, averageExpense } = useMemo(() => {
     const filteredExpenses = selectedCategory === 'all' 
@@ -57,15 +74,15 @@ export default function ExpensesPage() {
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
             <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
               className={`w-full sm:w-auto px-4 py-2 font-bold rounded-lg border-2 border-black transition-colors capitalize ${
-                selectedCategory === category
+                selectedCategory === category.id
                   ? 'bg-black text-white'
                   : 'bg-white text-black hover:bg-gray-100'
               }`}
             >
-              {category === 'all' ? 'All Categories' : category}
+              {category.label}
             </button>
           ))}
         </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { DashboardCard } from './dashboard-card';
+import { useUserSettings } from '@/hooks/use-user-settings';
 
 const DEFAULT_AMOUNTS: Record<string, number> = {
   tea: 50,
@@ -10,21 +11,6 @@ const DEFAULT_AMOUNTS: Record<string, number> = {
   groceries: 500,
   misc: 100,
 };
-
-// Initialize quick add amounts synchronously
-let initialQuickAddAmounts: Record<string, number> = DEFAULT_AMOUNTS;
-
-if (typeof window !== 'undefined') {
-  try {
-    const saved = localStorage.getItem('quickAddAmounts');
-    if (saved) {
-      initialQuickAddAmounts = JSON.parse(saved);
-    }
-  } catch (e) {
-    console.error('Failed to parse quick add amounts', e);
-    initialQuickAddAmounts = DEFAULT_AMOUNTS;
-  }
-}
 
 const QUICK_CATEGORIES = [
   { id: 'tea', label: 'Tea/Coffee', emoji: '☕', bgColor: 'bg-gradient-to-br from-amber-400 to-orange-500', borderColor: 'border-black', textColor: 'text-white', hoverColor: 'hover:opacity-90' },
@@ -39,7 +25,8 @@ interface QuickAddButtonsProps {
 }
 
 export function QuickAddButtons({ onAdd }: QuickAddButtonsProps) {
-  const [amounts] = useState<Record<string, number>>(initialQuickAddAmounts);
+  const { settings } = useUserSettings();
+  const amounts = settings.quickAddAmounts;
 
   return (
     <DashboardCard title="Quick Add Expense">

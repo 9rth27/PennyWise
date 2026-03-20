@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         category: String(item?.category || 'misc').trim() || 'misc',
         amount: Number(item?.amount) || 0,
       }))
-      .filter((item) => item.amount >= 0);
+      .filter((item: { amount: number }) => item.amount >= 0);
 
     if (limitedExpenses.length === 0) {
       return NextResponse.json([]);

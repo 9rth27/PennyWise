@@ -3,79 +3,48 @@
 import React, { useState, useCallback } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { useExpenses } from '@/hooks/use-expenses';
+import { useUserSettings } from '@/hooks/use-user-settings';
 import { toast } from 'sonner';
 
-// Initialize settings synchronously
-let initialSettings = {
-  monthlyBudget: 10000,
-  currency: 'INR',
-  theme: 'dark',
-  notifications: true,
-  emailAlerts: false,
-  defaultCategory: 'misc',
-  decimalPlaces: 2,
-  dateFormat: 'DD/MM/YYYY',
-};
-
-let initialQuickAddAmounts: Record<string, number> = {
-  tea: 50,
-  lunch: 200,
-  auto: 150,
-  groceries: 500,
-  misc: 100,
-};
-
-if (typeof window !== 'undefined') {
-  try {
-    const savedSettings = localStorage.getItem('pennywise_settings');
-    if (savedSettings) {
-      initialSettings = JSON.parse(savedSettings);
-    }
-  } catch (e) {
-    console.error('Failed to parse settings', e);
-  }
-
-  try {
-    const savedQuickAdd = localStorage.getItem('quickAddAmounts');
-    if (savedQuickAdd) {
-      initialQuickAddAmounts = JSON.parse(savedQuickAdd);
-    }
-  } catch (e) {
-    console.error('Failed to parse quick add amounts', e);
-  }
-}
-
 export default function SettingsPage() {
-  const { monthlyBudget, updateBudget, clearData } = useExpenses();
-  const [settings, setSettings] = useState(initialSettings);
-
-  const [customCategories, setCustomCategories] = useState([
-    { id: 'tea', label: 'Tea/Coffee', color: 'amber' },
-    { id: 'lunch', label: 'Lunch/Dinner', color: 'orange' },
-    { id: 'auto', label: 'Auto/Cab', color: 'blue' },
-    { id: 'groceries', label: 'Groceries', color: 'green' },
-    { id: 'misc', label: 'Misc', color: 'purple' },
-  ]);
+  const { clearData } = useExpenses();
+  const { settings, setSetting, updateQuickAddAmount, addCustomCategory: createCustomCategory, removeCustomCategory, saveSettings, resetSettings } = useUserSettings();
 
   const [newCategory, setNewCategory] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('red');
-  const [quickAddAmounts, setQuickAddAmounts] = useState<Record<string, number>>(initialQuickAddAmounts);
+  const quickAddAmounts = settings.quickAddAmounts;
 
-  const handleSettingChange = useCallback((key: string, value: string | number | boolean) => {
-    setSettings(prev => {
-      const newSettings = { ...prev, [key]: value };
+  const handleSettingChange = useCallback(
+    (key: 'monthlyBudget' | 'currency' | 'defaultCategory' | 'dateFormat' | 'decimalPlaces' | 'notifications' | 'emailAlerts', value: string | number | boolean) => {
       if (key === 'monthlyBudget') {
-        void updateBudget(Number(value));
+        setSetting('monthlyBudget', Number(value) > 0 ? Number(value) : 0);
+        return;
       }
-      localStorage.setItem('pennywise_settings', JSON.stringify(newSettings));
-      return newSettings;
-    });
-  }, [updateBudget]);
+
+      if (key === 'decimalPlaces') {
+        const parsedValue = Number(value);
+        setSetting('decimalPlaces', parsedValue >= 0 && parsedValue <= 2 ? parsedValue : 2);
+        return;
+      }
+
+      if (key === 'notifications' || key === 'emailAlerts') {
+        setSetting(key, Boolean(value));
+        return;
+      }
+
+      setSetting(key, String(value));
+    },
+    [setSetting],
+  );
 
   const handleSave = useCallback(() => {
-    localStorage.setItem('pennywise_settings', JSON.stringify(settings));
-    toast.success('Settings saved successfully!');
-  }, [settings]);
+    void (async () => {
+      const isSaved = await saveSettings();
+      if (isSaved) {
+        toast.success('Settings saved successfully!');
+      }
+    })();
+  }, [saveSettings]);
 
   const handleClearAll = useCallback(async () => {
     if (window.confirm('Are you sure you want to clear all transaction history? This cannot be undone.')) {
@@ -86,22 +55,26 @@ export default function SettingsPage() {
     }
   }, [clearData]);
 
-  const addCustomCategory = useCallback(() => {
+  const handleAddCustomCategory = useCallback(() => {
     if (newCategory.trim()) {
-      const newCat = {
+      createCustomCategory({
         id: newCategory.toLowerCase().replace(/\s+/g, '-'),
         label: newCategory,
         color: newCategoryColor,
-      };
-      setCustomCategories(prev => [...prev, newCat]);
+      });
       setNewCategory('');
       setNewCategoryColor('red');
     }
-  }, [newCategory, newCategoryColor]);
+  }, [createCustomCategory, newCategory, newCategoryColor]);
 
   const removeCategory = (id: string) => {
-    setCustomCategories(customCategories.filter((cat) => cat.id !== id));
+    removeCustomCategory(id);
   };
+
+  const handleResetDefaults = useCallback(() => {
+    resetSettings();
+    toast.info('Settings reset to defaults. Click Save Settings to persist changes.');
+  }, [resetSettings]);
 
   const colorOptions = [
     { name: 'Red', value: 'red', bg: 'bg-red-100', border: 'border-red-600' },
@@ -130,7 +103,7 @@ export default function SettingsPage() {
               <input
                 type="number"
                 value={settings.monthlyBudget}
-                onChange={(e) => handleSettingChange('monthlyBudget', parseInt(e.target.value))}
+                onChange={(e) => handleSettingChange('monthlyBudget', parseInt(e.target.value, 10) || 0)}
                 className="border border-black rounded-lg px-4 py-2 font-bold flex-1 focus:border-black focus:outline-none focus:ring-0"
               />
               <span className="font-bold text-lg">₹</span>
@@ -145,7 +118,7 @@ export default function SettingsPage() {
               onChange={(e) => handleSettingChange('defaultCategory', e.target.value)}
               className="border border-black rounded-lg px-4 py-2 font-bold w-full focus:border-black focus:outline-none focus:ring-0"
             >
-              {customCategories.map((cat) => (
+              {settings.customCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.label}
                 </option>
@@ -192,7 +165,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-bold text-black mb-2">Decimal Places</label>
             <select
               value={settings.decimalPlaces}
-              onChange={(e) => handleSettingChange('decimalPlaces', parseInt(e.target.value))}
+              onChange={(e) => handleSettingChange('decimalPlaces', parseInt(e.target.value, 10))}
               className="border border-black rounded-lg px-4 py-2 font-bold w-full focus:border-black focus:outline-none focus:ring-0"
             >
               <option value={0}>0 (₹1000)</option>
@@ -241,7 +214,7 @@ export default function SettingsPage() {
           <div>
             <p className="font-bold text-black mb-3">Current Categories</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {customCategories.map((cat) => {
+              {settings.customCategories.map((cat) => {
                 const color = colorOptions.find((c) => c.value === cat.color);
                 return (
                   <div key={cat.id} className={`border-3 ${color?.border} rounded-lg p-3 ${color?.bg}`}>
@@ -292,7 +265,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
-                onClick={addCustomCategory}
+                onClick={handleAddCustomCategory}
                 className="w-full border-3 border-black rounded-lg p-3 bg-black text-white font-bold hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
               >
                 + Add Category
@@ -325,9 +298,7 @@ export default function SettingsPage() {
                     type="number"
                     value={quickAddAmounts[item.id] || ''}
                     onChange={(e) => {
-                      const newAmounts = { ...quickAddAmounts, [item.id]: parseInt(e.target.value) || 0 };
-                      setQuickAddAmounts(newAmounts);
-                      localStorage.setItem('quickAddAmounts', JSON.stringify(newAmounts));
+                      updateQuickAddAmount(item.id, parseInt(e.target.value, 10) || 0);
                     }}
                     className="border border-black rounded px-2 py-1 font-bold w-20 max-sm:w-24 focus:outline-none"
                   />
@@ -364,7 +335,10 @@ export default function SettingsPage() {
         >
           💾 Save Settings
         </button>
-        <button className="flex-1 border-3 border-black rounded-xl p-4 bg-white text-black font-black text-lg hover:bg-gray-100 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
+        <button 
+          onClick={handleResetDefaults}
+          className="flex-1 border-3 border-black rounded-xl p-4 bg-white text-black font-black text-lg hover:bg-gray-100 transition-colors shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]"
+        >
           ↺ Reset to Default
         </button>
       </div>

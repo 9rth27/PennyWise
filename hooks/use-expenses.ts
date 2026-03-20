@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Expense } from '@/components/expense-list';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -14,7 +14,29 @@ type ExpenseRow = {
   date: string;
   time: string;
   description: string | null;
+  payment_method?: string | null;
 };
+
+type SupabaseQueryError = {
+  code?: string;
+  message?: string;
+};
+
+function isMissingSchemaError(error?: SupabaseQueryError | null) {
+  if (!error) {
+    return false;
+  }
+
+  return error.code === '42P01' || error.code === 'PGRST205';
+}
+
+function isMissingColumnError(error?: SupabaseQueryError | null) {
+  if (!error) {
+    return false;
+  }
+
+  return error.code === '42703';
+}
 
 function mapExpenseRow(row: ExpenseRow): Expense {
   return {
@@ -24,6 +46,7 @@ function mapExpenseRow(row: ExpenseRow): Expense {
     date: row.date,
     time: row.time,
     description: row.description || undefined,
+    paymentMethod: row.payment_method || undefined,
   };
 }
 
@@ -60,6 +83,7 @@ function readBudget(value: unknown) {
 export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [monthlyBudget, setMonthlyBudget] = useState<number>(DEFAULT_MONTHLY_BUDGET);
+  const hasShownSchemaHintRef = useRef(false);
 
   const supabase = useMemo(() => {
     try {
@@ -82,12 +106,15 @@ export function useExpenses() {
       return;
     }
 
-    const [{ data: expensesRows, error: expensesError }, { data: settingsRow, error: settingsError }] = await Promise.all([
+    const buildExpensesQuery = (columns: string) =>
       supabase
         .from('expenses')
-        .select('id, category, amount, date, time, description')
+        .select(columns)
         .order('date', { ascending: false })
-        .order('time', { ascending: false }),
+        .order('time', { ascending: false });
+
+    const [{ data: expensesRowsWithPaymentMethod, error: expensesErrorWithPaymentMethod }, { data: settingsRow, error: settingsError }] = await Promise.all([
+      buildExpensesQuery('id, category, amount, date, time, description, payment_method'),
       supabase
         .from('user_settings')
         .select('monthly_budget')
@@ -95,13 +122,28 @@ export function useExpenses() {
         .maybeSingle(),
     ]);
 
+    let expensesRows = expensesRowsWithPaymentMethod;
+    let expensesError = expensesErrorWithPaymentMethod;
+
+    if (expensesErrorWithPaymentMethod && isMissingColumnError(expensesErrorWithPaymentMethod)) {
+      const { data: legacyRows, error: legacyError } = await buildExpensesQuery('id, category, amount, date, time, description');
+      expensesRows = legacyRows;
+      expensesError = legacyError;
+    }
+
     if (expensesError) {
-      console.error('[Supabase] Failed to load expenses');
+      if (isMissingSchemaError(expensesError) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to load expenses', expensesError);
+      }
+
       return;
     }
 
     const safeExpenses = Array.isArray(expensesRows)
-      ? expensesRows.map((row) => mapExpenseRow(row as ExpenseRow))
+      ? expensesRows.map((row) => mapExpenseRow(row as unknown as ExpenseRow))
       : [];
 
     setExpenses(sortExpenses(safeExpenses));
@@ -166,21 +208,170 @@ export function useExpenses() {
       date: expense.date,
       time: expense.time,
       description: expense.description || null,
+      payment_method: expense.paymentMethod || null,
     };
 
     const { data, error } = await supabase
       .from('expenses')
       .insert(payload)
-      .select('id, category, amount, date, time, description')
+      .select('id, category, amount, date, time, description, payment_method')
       .single();
 
+    if (error && isMissingColumnError(error)) {
+      const legacyPayload = {
+        id: payload.id,
+        user_id: payload.user_id,
+        category: payload.category,
+        amount: payload.amount,
+        date: payload.date,
+        time: payload.time,
+        description: payload.description,
+      };
+
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('expenses')
+        .insert(legacyPayload)
+        .select('id, category, amount, date, time, description')
+        .single();
+
+      if (legacyError || !legacyData) {
+        if (isMissingSchemaError(legacyError) && !hasShownSchemaHintRef.current) {
+          hasShownSchemaHintRef.current = true;
+          toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+        } else {
+          console.warn('[Supabase] Failed to add expense', legacyError);
+        }
+
+        toast.error('Unable to save expense right now.');
+        return false;
+      }
+
+      setExpenses((previous) => sortExpenses([mapExpenseRow(legacyData as ExpenseRow), ...previous]));
+      return true;
+    }
+
     if (error || !data) {
-      console.error('[Supabase] Failed to add expense');
+      if (isMissingSchemaError(error) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to add expense', error);
+      }
+
       toast.error('Unable to save expense right now.');
       return false;
     }
 
     setExpenses((previous) => sortExpenses([mapExpenseRow(data as ExpenseRow), ...previous]));
+    return true;
+  }, [supabase]);
+
+  const updateExpense = useCallback(async (
+    id: string,
+    updates: Partial<Pick<Expense, 'category' | 'amount' | 'date' | 'time' | 'description' | 'paymentMethod'>>,
+  ) => {
+    if (!id || !updates || Object.keys(updates).length === 0) {
+      return false;
+    }
+
+    if (!supabase) {
+      toast.error('Database is not configured yet.');
+      return false;
+    }
+
+    const payload: Record<string, unknown> = {};
+
+    if (typeof updates.category === 'string' && updates.category.trim()) {
+      payload.category = updates.category.toLowerCase().trim();
+    }
+
+    if (updates.amount !== undefined) {
+      const parsedAmount = Number(updates.amount);
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        toast.error('Invalid expense amount.');
+        return false;
+      }
+      payload.amount = parsedAmount;
+    }
+
+    if (typeof updates.date === 'string' && updates.date) {
+      payload.date = updates.date;
+    }
+
+    if (typeof updates.time === 'string' && updates.time) {
+      payload.time = updates.time;
+    }
+
+    if (updates.description !== undefined) {
+      payload.description = updates.description || null;
+    }
+
+    if (updates.paymentMethod !== undefined) {
+      payload.payment_method = updates.paymentMethod || null;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(payload)
+      .eq('id', id)
+      .select('id, category, amount, date, time, description, payment_method')
+      .single();
+
+    if (error && isMissingColumnError(error)) {
+      const legacyPayload = {
+        category: payload.category,
+        amount: payload.amount,
+        date: payload.date,
+        time: payload.time,
+        description: payload.description,
+      };
+
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('expenses')
+        .update(legacyPayload)
+        .eq('id', id)
+        .select('id, category, amount, date, time, description')
+        .single();
+
+      if (legacyError || !legacyData) {
+        if (isMissingSchemaError(legacyError) && !hasShownSchemaHintRef.current) {
+          hasShownSchemaHintRef.current = true;
+          toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+        } else {
+          console.warn('[Supabase] Failed to update expense', legacyError);
+        }
+
+        toast.error('Unable to update expense right now.');
+        return false;
+      }
+
+      setExpenses((previous) =>
+        sortExpenses(previous.map((expense) => (expense.id === id ? mapExpenseRow(legacyData as ExpenseRow) : expense))),
+      );
+
+      return true;
+    }
+
+    if (error || !data) {
+      if (isMissingSchemaError(error) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to update expense', error);
+      }
+
+      toast.error('Unable to update expense right now.');
+      return false;
+    }
+
+    setExpenses((previous) =>
+      sortExpenses(previous.map((expense) => (expense.id === id ? mapExpenseRow(data as ExpenseRow) : expense))),
+    );
+
     return true;
   }, [supabase]);
 
@@ -200,7 +391,13 @@ export function useExpenses() {
       .eq('id', id);
 
     if (error) {
-      console.error('[Supabase] Failed to delete expense');
+      if (isMissingSchemaError(error) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to delete expense', error);
+      }
+
       toast.error('Unable to delete expense right now.');
       return false;
     }
@@ -243,7 +440,13 @@ export function useExpenses() {
       );
 
     if (error) {
-      console.error('[Supabase] Failed to update budget');
+      if (isMissingSchemaError(error) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to update budget', error);
+      }
+
       toast.error('Unable to update budget right now.');
       return false;
     }
@@ -283,7 +486,14 @@ export function useExpenses() {
     ]);
 
     if (clearExpensesResult.error || resetBudgetResult.error) {
-      console.error('[Supabase] Failed to clear data');
+      const maybeError = clearExpensesResult.error || resetBudgetResult.error;
+      if (isMissingSchemaError(maybeError) && !hasShownSchemaHintRef.current) {
+        hasShownSchemaHintRef.current = true;
+        toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
+      } else {
+        console.warn('[Supabase] Failed to clear data', maybeError);
+      }
+
       toast.error('Unable to clear your data right now.');
       return false;
     }
@@ -297,6 +507,7 @@ export function useExpenses() {
     expenses,
     monthlyBudget,
     addExpense,
+    updateExpense,
     deleteExpense,
     updateBudget,
     clearData,

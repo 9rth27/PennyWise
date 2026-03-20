@@ -10,6 +10,7 @@ export interface Expense {
   date: string;
   time: string;
   description?: string;
+  paymentMethod?: string;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {

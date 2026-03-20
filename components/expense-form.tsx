@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardCard } from './dashboard-card';
+import { useUserSettings } from '@/hooks/use-user-settings';
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   { id: 'tea', label: 'Tea/Coffee' },
   { id: 'lunch', label: 'Lunch/Dinner' },
   { id: 'auto', label: 'Auto/Cab' },
@@ -28,11 +29,22 @@ interface ExpenseFormProps {
 }
 
 export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
+  const { settings } = useUserSettings();
+  const categories = settings.customCategories.length > 0 ? settings.customCategories : DEFAULT_CATEGORIES;
   const [category, setCategory] = useState('misc');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setCategory((previous) => {
+      if (previous && previous !== 'misc') {
+        return previous;
+      }
+      return settings.defaultCategory || 'misc';
+    });
+  }, [settings.defaultCategory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +63,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       });
       setAmount('');
       setDescription('');
-      setCategory('misc');
+      setCategory(settings.defaultCategory || 'misc');
       setPaymentMethod('cash');
     } finally {
       setLoading(false);
@@ -68,7 +80,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
             onChange={(e) => setCategory(e.target.value)}
             className="w-full border-2 border-black rounded-lg p-3 font-bold bg-white text-black"
           >
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.label}
               </option>
