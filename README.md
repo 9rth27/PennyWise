@@ -1,4 +1,5 @@
 Hello
+<<<<<<< HEAD
 
 ## Auth redirect setup (Google login/signup)
 
@@ -11,3 +12,5 @@ To avoid OAuth callback issues like `DEPLOYMENT_NOT_FOUND`, keep your app URL co
 		- `https://your-domain.com/auth/callback`
 		- `http://localhost:3000/auth/callback`
 - Redeploy after changing environment variables.
+=======
+>>>>>>> 77cd112873ad75feee00813591df37c60bed9fca
