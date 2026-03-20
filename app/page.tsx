@@ -40,14 +40,20 @@ function DashboardContent() {
         
         if (data.user) {
           setIsLoggedIn(true);
-          // Get full name from user metadata - prioritize full_name
-          const fullName = data.user.user_metadata?.full_name?.trim();
+          // Get full name from user metadata - check multiple fields
+          const fullName = 
+            data.user.user_metadata?.full_name?.trim() ||
+            data.user.user_metadata?.name?.trim() ||
+            data.user.user_metadata?.given_name?.trim();
+          console.log('User metadata:', data.user.user_metadata);
+          console.log('Full name extracted:', fullName);
           setUserName(fullName || null);
         } else {
           setIsLoggedIn(false);
           setUserName(null);
         }
-      } catch {
+      } catch (error) {
+        console.error('Error fetching user:', error);
         setIsLoggedIn(false);
         setUserName(null);
       }
@@ -59,9 +65,15 @@ function DashboardContent() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        console.log('Auth state changed:', _event);
         if (session?.user) {
           setIsLoggedIn(true);
-          const fullName = session.user.user_metadata?.full_name?.trim();
+          const fullName = 
+            session.user.user_metadata?.full_name?.trim() ||
+            session.user.user_metadata?.name?.trim() ||
+            session.user.user_metadata?.given_name?.trim();
+          console.log('Session user metadata:', session.user.user_metadata);
+          console.log('Session full name:', fullName);
           setUserName(fullName || null);
         } else {
           setIsLoggedIn(false);
@@ -72,7 +84,8 @@ function DashboardContent() {
       return () => {
         authListener.subscription.unsubscribe();
       };
-    } catch {
+    } catch (error) {
+      console.error('Auth state listener error:', error);
       return undefined;
     }
   }, []);
