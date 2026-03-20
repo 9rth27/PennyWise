@@ -89,7 +89,7 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccessMessage('🎉 Account created successfully! Please log in to continue.');
+      setSuccessMessage(`✅ Account created successfully!\n\nPlease check your email (${email}) to confirm your account before logging in.`);
       setName('');
       setEmail('');
       setPassword('');
@@ -108,7 +108,7 @@ export default function SignupPage() {
             <div className="space-y-3">
               <div className="text-5xl">🎉</div>
               <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-black">Account Created!</h1>
-              <p className="text-gray-600 font-bold text-lg">{successMessage}</p>
+              <p className="text-gray-600 font-bold text-lg whitespace-pre-line">{successMessage}</p>
             </div>
 
             <Link
