@@ -11,7 +11,7 @@ export default function AddExpensePage() {
   const { addExpense } = useExpenses();
   const router = useRouter();
 
-  const handleSubmit = async (data: { category: string; amount: number; description?: string }) => {
+  const handleSubmit = async (data: { category: string; amount: number; name?: string; description?: string; paymentMethod?: string }) => {
     const newExpense = {
       id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
       ...data,

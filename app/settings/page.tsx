@@ -56,16 +56,40 @@ export default function SettingsPage() {
   }, [clearData]);
 
   const handleAddCustomCategory = useCallback(() => {
-    if (newCategory.trim()) {
-      createCustomCategory({
-        id: newCategory.toLowerCase().replace(/\s+/g, '-'),
-        label: newCategory,
+    void (async () => {
+      const trimmedCategory = newCategory.trim();
+      if (!trimmedCategory) {
+        return;
+      }
+
+      const categoryToAdd = {
+        id: trimmedCategory.toLowerCase().replace(/\s+/g, '-'),
+        label: trimmedCategory,
         color: newCategoryColor,
+      };
+
+      if (settings.customCategories.some((category) => category.id === categoryToAdd.id)) {
+        toast.error('Category already exists.');
+        return;
+      }
+
+      createCustomCategory(categoryToAdd);
+
+      const isSaved = await saveSettings({
+        ...settings,
+        customCategories: [...settings.customCategories, categoryToAdd],
       });
+
+      if (!isSaved) {
+        removeCustomCategory(categoryToAdd.id);
+        return;
+      }
+
       setNewCategory('');
       setNewCategoryColor('red');
-    }
-  }, [createCustomCategory, newCategory, newCategoryColor]);
+      toast.success('Category saved for your account.');
+    })();
+  }, [createCustomCategory, newCategory, newCategoryColor, removeCustomCategory, saveSettings, settings]);
 
   const removeCategory = (id: string) => {
     removeCustomCategory(id);

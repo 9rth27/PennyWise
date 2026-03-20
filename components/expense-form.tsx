@@ -25,13 +25,14 @@ const PAYMENT_METHODS = [
 ];
 
 interface ExpenseFormProps {
-  onSubmit: (data: { category: string; amount: number; description?: string; paymentMethod?: string }) => void | Promise<void>;
+  onSubmit: (data: { category: string; amount: number; name?: string; description?: string; paymentMethod?: string }) => void | Promise<void>;
 }
 
 export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const { settings } = useUserSettings();
   const categories = settings.customCategories.length > 0 ? settings.customCategories : DEFAULT_CATEGORIES;
   const [category, setCategory] = useState('misc');
+  const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -58,9 +59,11 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       await onSubmit({
         category,
         amount: parseFloat(amount),
+        name: name.trim() || undefined,
         description,
         paymentMethod,
       });
+      setName('');
       setAmount('');
       setDescription('');
       setCategory(settings.defaultCategory || 'misc');
@@ -86,6 +89,17 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block font-bold text-sm mb-2">Name (Optional)</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Netflix, Office Lunch"
+            className="w-full border-2 border-black rounded-lg p-3 font-bold bg-white text-black placeholder-gray-400"
+          />
         </div>
 
         <div>

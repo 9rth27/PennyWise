@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const CONTACT_RECIPIENT_EMAIL = 'parthpatil1958@gmail.com';
+
 const contactSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().max(254),
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL;
-    const supportEmail = process.env.SUPPORT_EMAIL || process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+    const supportEmail = CONTACT_RECIPIENT_EMAIL;
 
     if (!resendApiKey || !fromEmail || !supportEmail) {
       return responseJson({ success: true }, 200);

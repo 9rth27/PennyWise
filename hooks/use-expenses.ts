@@ -11,6 +11,7 @@ type ExpenseRow = {
   id: string;
   category: string;
   amount: number;
+  name?: string | null;
   date: string;
   time: string;
   description: string | null;
@@ -43,6 +44,7 @@ function mapExpenseRow(row: ExpenseRow): Expense {
     id: row.id,
     category: row.category,
     amount: Number(row.amount),
+    name: row.name?.trim() || undefined,
     date: row.date,
     time: row.time,
     description: row.description || undefined,
@@ -113,8 +115,8 @@ export function useExpenses() {
         .order('date', { ascending: false })
         .order('time', { ascending: false });
 
-    const [{ data: expensesRowsWithPaymentMethod, error: expensesErrorWithPaymentMethod }, { data: settingsRow, error: settingsError }] = await Promise.all([
-      buildExpensesQuery('id, category, amount, date, time, description, payment_method'),
+    const [{ data: expensesRowsWithName, error: expensesErrorWithName }, { data: settingsRow, error: settingsError }] = await Promise.all([
+      buildExpensesQuery('id, category, amount, name, date, time, description, payment_method'),
       supabase
         .from('user_settings')
         .select('monthly_budget')
@@ -122,13 +124,22 @@ export function useExpenses() {
         .maybeSingle(),
     ]);
 
-    let expensesRows = expensesRowsWithPaymentMethod;
-    let expensesError = expensesErrorWithPaymentMethod;
+    let expensesRows = expensesRowsWithName;
+    let expensesError = expensesErrorWithName;
 
-    if (expensesErrorWithPaymentMethod && isMissingColumnError(expensesErrorWithPaymentMethod)) {
-      const { data: legacyRows, error: legacyError } = await buildExpensesQuery('id, category, amount, date, time, description');
-      expensesRows = legacyRows;
-      expensesError = legacyError;
+    if (expensesErrorWithName && isMissingColumnError(expensesErrorWithName)) {
+      const { data: rowsWithoutName, error: errorWithoutName } = await buildExpensesQuery(
+        'id, category, amount, date, time, description, payment_method',
+      );
+
+      expensesRows = rowsWithoutName;
+      expensesError = errorWithoutName;
+
+      if (errorWithoutName && isMissingColumnError(errorWithoutName)) {
+        const { data: legacyRows, error: legacyError } = await buildExpensesQuery('id, category, amount, date, time, description');
+        expensesRows = legacyRows;
+        expensesError = legacyError;
+      }
     }
 
     if (expensesError) {
@@ -205,6 +216,7 @@ export function useExpenses() {
       user_id: user.id,
       category: String(expense.category).toLowerCase().trim(),
       amount: Number(expense.amount),
+      name: expense.name?.trim() || null,
       date: expense.date,
       time: expense.time,
       description: expense.description || null,
@@ -214,10 +226,32 @@ export function useExpenses() {
     const { data, error } = await supabase
       .from('expenses')
       .insert(payload)
-      .select('id, category, amount, date, time, description, payment_method')
+      .select('id, category, amount, name, date, time, description, payment_method')
       .single();
 
     if (error && isMissingColumnError(error)) {
+      const fallbackWithoutName = {
+        id: payload.id,
+        user_id: payload.user_id,
+        category: payload.category,
+        amount: payload.amount,
+        date: payload.date,
+        time: payload.time,
+        description: payload.description,
+        payment_method: payload.payment_method,
+      };
+
+      const { data: dataWithoutName, error: errorWithoutName } = await supabase
+        .from('expenses')
+        .insert(fallbackWithoutName)
+        .select('id, category, amount, date, time, description, payment_method')
+        .single();
+
+      if (!errorWithoutName && dataWithoutName) {
+        setExpenses((previous) => sortExpenses([mapExpenseRow(dataWithoutName as ExpenseRow), ...previous]));
+        return true;
+      }
+
       const legacyPayload = {
         id: payload.id,
         user_id: payload.user_id,
@@ -239,7 +273,7 @@ export function useExpenses() {
           hasShownSchemaHintRef.current = true;
           toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
         } else {
-          console.warn('[Supabase] Failed to add expense', legacyError);
+          console.warn('[Supabase] Failed to add expense', errorWithoutName || legacyError);
         }
 
         toast.error('Unable to save expense right now.');
@@ -268,7 +302,7 @@ export function useExpenses() {
 
   const updateExpense = useCallback(async (
     id: string,
-    updates: Partial<Pick<Expense, 'category' | 'amount' | 'date' | 'time' | 'description' | 'paymentMethod'>>,
+    updates: Partial<Pick<Expense, 'category' | 'amount' | 'name' | 'date' | 'time' | 'description' | 'paymentMethod'>>,
   ) => {
     if (!id || !updates || Object.keys(updates).length === 0) {
       return false;
@@ -292,6 +326,10 @@ export function useExpenses() {
         return false;
       }
       payload.amount = parsedAmount;
+    }
+
+    if (updates.name !== undefined) {
+      payload.name = updates.name?.trim() || null;
     }
 
     if (typeof updates.date === 'string' && updates.date) {
@@ -318,10 +356,34 @@ export function useExpenses() {
       .from('expenses')
       .update(payload)
       .eq('id', id)
-      .select('id, category, amount, date, time, description, payment_method')
+      .select('id, category, amount, name, date, time, description, payment_method')
       .single();
 
     if (error && isMissingColumnError(error)) {
+      const payloadWithoutName = {
+        category: payload.category,
+        amount: payload.amount,
+        date: payload.date,
+        time: payload.time,
+        description: payload.description,
+        payment_method: payload.payment_method,
+      };
+
+      const { data: dataWithoutName, error: errorWithoutName } = await supabase
+        .from('expenses')
+        .update(payloadWithoutName)
+        .eq('id', id)
+        .select('id, category, amount, date, time, description, payment_method')
+        .single();
+
+      if (!errorWithoutName && dataWithoutName) {
+        setExpenses((previous) =>
+          sortExpenses(previous.map((expense) => (expense.id === id ? mapExpenseRow(dataWithoutName as ExpenseRow) : expense))),
+        );
+
+        return true;
+      }
+
       const legacyPayload = {
         category: payload.category,
         amount: payload.amount,
@@ -342,7 +404,7 @@ export function useExpenses() {
           hasShownSchemaHintRef.current = true;
           toast.error('Database schema is missing. Run supabase/schema.sql in Supabase SQL Editor.');
         } else {
-          console.warn('[Supabase] Failed to update expense', legacyError);
+          console.warn('[Supabase] Failed to update expense', errorWithoutName || legacyError);
         }
 
         toast.error('Unable to update expense right now.');

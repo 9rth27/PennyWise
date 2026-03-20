@@ -7,6 +7,7 @@ export interface Expense {
   id: string;
   category: string;
   amount: number;
+  name?: string;
   date: string;
   time: string;
   description?: string;
@@ -44,7 +45,10 @@ const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Rece
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="text-2xl">{CATEGORY_EMOJI[expense.category] || '📦'}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-black text-sm text-black capitalize">{expense.category}</p>
+                  <p className={`font-black text-sm text-black ${expense.name?.trim() ? '' : 'capitalize'}`}>
+                    {expense.name?.trim() || expense.category}
+                  </p>
+                  {expense.name?.trim() ? <p className="text-xs text-gray-600 capitalize">{expense.category}</p> : null}
                   <p className="text-xs text-gray-600">{expense.date} at {expense.time}</p>
                 </div>
               </div>

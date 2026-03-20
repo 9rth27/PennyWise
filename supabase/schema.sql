@@ -7,6 +7,7 @@ create table if not exists public.expenses (
   user_id uuid not null references auth.users(id) on delete cascade,
   category text not null,
   amount numeric(12,2) not null check (amount > 0),
+  name text,
   date date not null,
   time text not null,
   description text,
@@ -43,6 +44,9 @@ alter table public.user_settings
   add column if not exists date_format text not null default 'DD/MM/YYYY',
   add column if not exists quick_add_amounts jsonb not null default '{"tea":50,"lunch":200,"auto":150,"groceries":500,"misc":100}'::jsonb,
   add column if not exists custom_categories jsonb not null default '[{"id":"tea","label":"Tea/Coffee","color":"amber"},{"id":"lunch","label":"Lunch/Dinner","color":"orange"},{"id":"auto","label":"Auto/Cab","color":"blue"},{"id":"groceries","label":"Groceries","color":"green"},{"id":"misc","label":"Misc","color":"purple"}]'::jsonb;
+
+alter table public.expenses
+  add column if not exists name text;
 
 create or replace function public.set_updated_at()
 returns trigger
