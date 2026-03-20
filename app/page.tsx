@@ -45,9 +45,24 @@ function DashboardContent() {
             data.user.user_metadata?.full_name?.trim() ||
             data.user.user_metadata?.name?.trim() ||
             data.user.user_metadata?.given_name?.trim();
+          
           console.log('User metadata:', data.user.user_metadata);
           console.log('Full name extracted:', fullName);
-          setUserName(fullName || null);
+          console.log('User email:', data.user.email);
+          
+          // Fallback: extract name from email if no metadata name
+          if (fullName) {
+            setUserName(fullName);
+          } else if (data.user.email) {
+            const emailName = data.user.email.split('@')[0];
+            const formattedName = emailName.split(/[._-]/).map(part => 
+              part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            ).join(' ');
+            console.log('Fallback name from email:', formattedName);
+            setUserName(formattedName);
+          } else {
+            setUserName(null);
+          }
         } else {
           setIsLoggedIn(false);
           setUserName(null);
@@ -74,7 +89,20 @@ function DashboardContent() {
             session.user.user_metadata?.given_name?.trim();
           console.log('Session user metadata:', session.user.user_metadata);
           console.log('Session full name:', fullName);
-          setUserName(fullName || null);
+          
+          // Fallback: extract name from email if no metadata name
+          if (fullName) {
+            setUserName(fullName);
+          } else if (session.user.email) {
+            const emailName = session.user.email.split('@')[0];
+            const formattedName = emailName.split(/[._-]/).map(part => 
+              part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            ).join(' ');
+            console.log('Fallback name from email:', formattedName);
+            setUserName(formattedName);
+          } else {
+            setUserName(null);
+          }
         } else {
           setIsLoggedIn(false);
           setUserName(null);
