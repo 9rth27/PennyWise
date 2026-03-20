@@ -5,11 +5,16 @@ import { ExpenseCharts } from '@/components/expense-charts';
 import { DashboardCard } from '@/components/dashboard-card';
 import { Expense } from '@/components/expense-list';
 import { AIInsights } from '@/components/ai-insights';
+import { formatCurrencyAmount } from '@/lib/display-format';
 
 import { useExpenses } from '@/hooks/use-expenses';
+import { useUserSettings } from '@/hooks/use-user-settings';
 
 export default function AnalyticsPage() {
   const { expenses, monthlyBudget } = useExpenses();
+  const { settings } = useUserSettings();
+
+  const formatMoney = (amount: number) => formatCurrencyAmount(amount, settings.currency, settings.decimalPlaces);
 
   // Memoize all calculations
   const { totalSpent, categoryStats, topCategory, avgDailySpending } = useMemo(() => {
@@ -57,12 +62,14 @@ export default function AnalyticsPage() {
         topCategory={topCategory?.category || ''}
         avgDailySpending={avgDailySpending}
         expenses={expenses}
+        currency={settings.currency}
+        decimalPlaces={settings.decimalPlaces}
       />
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardCard title="Total Spent">
-          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
+          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">{formatMoney(totalSpent)}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">Last 15 days</p>
         </DashboardCard>
         <DashboardCard title="Transactions">
@@ -70,17 +77,22 @@ export default function AnalyticsPage() {
           <p className="text-xs text-gray-600 font-bold mt-2">Total count</p>
         </DashboardCard>
         <DashboardCard title="Avg Daily Spend">
-          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">₹{avgDailySpending.toFixed(2)}</p>
+          <p className="text-3xl max-sm:text-2xl font-black text-black break-words">{formatMoney(avgDailySpending)}</p>
           <p className="text-xs text-gray-600 font-bold mt-2">Per day</p>
         </DashboardCard>
         <DashboardCard title="Top Category">
           <p className="text-2xl max-sm:text-xl font-black text-black capitalize break-words">{topCategory?.category || 'N/A'}</p>
-          <p className="text-xs text-gray-600 font-bold mt-2">₹{topCategory?.total.toFixed(2) || '0'}</p>
+          <p className="text-xs text-gray-600 font-bold mt-2">{topCategory ? formatMoney(topCategory.total) : formatMoney(0)}</p>
         </DashboardCard>
       </div>
 
       {/* Charts */}
-      <ExpenseCharts expenses={expenses} />
+      <ExpenseCharts
+        expenses={expenses}
+        currency={settings.currency}
+        decimalPlaces={settings.decimalPlaces}
+        dateFormat={settings.dateFormat}
+      />
     </div>
   );
 }

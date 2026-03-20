@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { DashboardCard } from '@/components/dashboard-card';
 import { createExpenseId, useExpenses } from '@/hooks/use-expenses';
 import { useUserSettings } from '@/hooks/use-user-settings';
+import { formatCurrencyAmount, getCurrencySymbol } from '@/lib/display-format';
 import { toast } from 'sonner';
 
 const CSV_HEADERS = ['id', 'category', 'amount', 'name', 'date', 'time', 'description', 'payment_method'];
@@ -138,6 +139,8 @@ export default function SettingsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const quickAddAmounts = settings.quickAddAmounts;
+  const currencySymbol = getCurrencySymbol(settings.currency);
+  const quickAddStep = settings.decimalPlaces === 0 ? '1' : settings.decimalPlaces === 1 ? '0.1' : '0.01';
 
   const handleSettingChange = useCallback(
     (key: 'monthlyBudget' | 'currency' | 'defaultCategory' | 'dateFormat' | 'decimalPlaces' | 'notifications' | 'emailAlerts', value: string | number | boolean) => {
@@ -148,7 +151,56 @@ export default function SettingsPage() {
 
       if (key === 'decimalPlaces') {
         const parsedValue = Number(value);
-        setSetting('decimalPlaces', parsedValue >= 0 && parsedValue <= 2 ? parsedValue : 2);
+        const nextDecimalPlaces = parsedValue >= 0 && parsedValue <= 2 ? parsedValue : 2;
+        setSetting('decimalPlaces', nextDecimalPlaces);
+
+        void (async () => {
+          const isSaved = await saveSettings({
+            ...settings,
+            decimalPlaces: nextDecimalPlaces,
+          });
+
+          if (isSaved) {
+            toast.success('Display preference saved for your account.');
+          }
+        })();
+
+        return;
+      }
+
+      if (key === 'currency') {
+        const nextCurrency = String(value);
+        setSetting('currency', nextCurrency);
+
+        void (async () => {
+          const isSaved = await saveSettings({
+            ...settings,
+            currency: nextCurrency,
+          });
+
+          if (isSaved) {
+            toast.success('Display preference saved for your account.');
+          }
+        })();
+
+        return;
+      }
+
+      if (key === 'dateFormat') {
+        const nextDateFormat = String(value);
+        setSetting('dateFormat', nextDateFormat);
+
+        void (async () => {
+          const isSaved = await saveSettings({
+            ...settings,
+            dateFormat: nextDateFormat,
+          });
+
+          if (isSaved) {
+            toast.success('Display preference saved for your account.');
+          }
+        })();
+
         return;
       }
 
@@ -159,7 +211,7 @@ export default function SettingsPage() {
 
       setSetting(key, String(value));
     },
-    [setSetting],
+    [saveSettings, setSetting, settings],
   );
 
   const handleSave = useCallback(() => {
@@ -414,7 +466,7 @@ export default function SettingsPage() {
                 onChange={(e) => handleSettingChange('monthlyBudget', parseInt(e.target.value, 10) || 0)}
                 className="border border-black rounded-lg px-4 py-2 font-bold flex-1 focus:border-black focus:outline-none focus:ring-0"
               />
-              <span className="font-bold text-lg">₹</span>
+              <span className="font-bold text-lg">{currencySymbol}</span>
             </div>
             <p className="text-xs text-gray-600 font-bold mt-2">Set your target monthly spending limit</p>
           </div>
@@ -476,9 +528,9 @@ export default function SettingsPage() {
               onChange={(e) => handleSettingChange('decimalPlaces', parseInt(e.target.value, 10))}
               className="border border-black rounded-lg px-4 py-2 font-bold w-full focus:border-black focus:outline-none focus:ring-0"
             >
-              <option value={0}>0 (₹1000)</option>
-              <option value={1}>1 (₹1000.0)</option>
-              <option value={2}>2 (₹1000.00)</option>
+              <option value={0}>0 ({formatCurrencyAmount(1000, settings.currency, 0)})</option>
+              <option value={1}>1 ({formatCurrencyAmount(1000, settings.currency, 1)})</option>
+              <option value={2}>2 ({formatCurrencyAmount(1000, settings.currency, 2)})</option>
             </select>
           </div>
         </div>
@@ -601,12 +653,13 @@ export default function SettingsPage() {
                   <p className="font-bold text-black text-sm">{item.label}</p>
                 </div>
                 <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
-                  <span className="font-black">₹</span>
+                  <span className="font-black">{currencySymbol}</span>
                   <input
                     type="number"
+                    step={quickAddStep}
                     value={quickAddAmounts[item.id] || ''}
                     onChange={(e) => {
-                      updateQuickAddAmount(item.id, parseInt(e.target.value, 10) || 0);
+                      updateQuickAddAmount(item.id, Number(e.target.value) || 0);
                     }}
                     className="border border-black rounded px-2 py-1 font-bold w-20 max-sm:w-24 focus:outline-none"
                   />

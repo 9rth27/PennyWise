@@ -9,15 +9,23 @@ import { ExpenseList, Expense } from '@/components/expense-list';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { formatCurrencyAmount } from '@/lib/display-format';
 
 import { createExpenseId, useExpenses } from '@/hooks/use-expenses';
+import { useUserSettings } from '@/hooks/use-user-settings';
 
 function DashboardContent() {
   const { expenses, monthlyBudget, addExpense, deleteExpense } = useExpenses();
+  const { settings } = useUserSettings();
   const [userName, setUserName] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [emailConfirmedShown, setEmailConfirmedShown] = useState(false);
+
+  const formatMoney = useCallback(
+    (amount: number) => formatCurrencyAmount(amount, settings.currency, settings.decimalPlaces),
+    [settings.currency, settings.decimalPlaces],
+  );
 
   // Handle email confirmation toast
   useEffect(() => {
@@ -169,7 +177,7 @@ function DashboardContent() {
       return;
     }
     
-    toast.success(`Added ₹${amount} for ${category}`, {
+    toast.success(`Added ${formatMoney(amount)} for ${category}`, {
       duration: 5000,
       action: {
         label: 'Undo',
@@ -181,7 +189,7 @@ function DashboardContent() {
         }
       }
     });
-  }, [addExpense, deleteExpense]);
+  }, [addExpense, deleteExpense, formatMoney]);
 
   const handleDelete = useCallback(async (id: string) => {
     const isDeleted = await deleteExpense(id);
@@ -217,16 +225,16 @@ function DashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border-4 border-black rounded-lg p-4 bg-gradient-to-br from-emerald-500 to-green-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-sm font-bold text-green-100 mb-1">BUDGET</p>
-            <p className="text-3xl max-sm:text-2xl font-black text-white break-words">₹{monthlyBudget.toLocaleString()}</p>
+            <p className="text-3xl max-sm:text-2xl font-black text-white break-words">{formatMoney(monthlyBudget)}</p>
           </div>
           <div className="border-4 border-black rounded-lg p-4 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-sm font-bold text-blue-100 mb-1">SPENT</p>
-            <p className="text-3xl max-sm:text-2xl font-black text-white break-words">₹{monthlyTotal.toLocaleString()}</p>
+            <p className="text-3xl max-sm:text-2xl font-black text-white break-words">{formatMoney(monthlyTotal)}</p>
           </div>
           <div className={`border-4 border-black rounded-lg p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${remainingBudget >= 0 ? 'bg-gradient-to-br from-purple-500 to-pink-600' : 'bg-gradient-to-br from-red-500 to-orange-600'}`}>
             <p className="text-sm font-bold text-white opacity-80 mb-1">REMAINING</p>
             <p className="text-3xl max-sm:text-2xl font-black text-white break-words">
-              ₹{remainingBudget.toLocaleString()}
+              {formatMoney(remainingBudget)}
             </p>
           </div>
         </div>
@@ -242,7 +250,12 @@ function DashboardContent() {
       <QuickAddButtons onAdd={handleQuickAdd} />
 
       {/* Today's Snapshot */}
-      <TodaySnapshot totalSpent={totalTodaySpent} transactionCount={todayExpenses.length} />
+      <TodaySnapshot
+        totalSpent={totalTodaySpent}
+        transactionCount={todayExpenses.length}
+        currency={settings.currency}
+        decimalPlaces={settings.decimalPlaces}
+      />
 
       {/* Quick Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,7 +267,7 @@ function DashboardContent() {
             </div>
             <div className="text-right max-sm:text-left">
               <p className="text-sm text-gray-600 font-bold mb-1">Total Spent</p>
-              <p className="text-2xl max-sm:text-xl font-black text-black break-words">₹{topCategory?.total.toLocaleString() || '0'}</p>
+              <p className="text-2xl max-sm:text-xl font-black text-black break-words">{topCategory ? formatMoney(topCategory.total) : formatMoney(0)}</p>
             </div>
           </div>
         </DashboardCard>
@@ -272,14 +285,21 @@ function DashboardContent() {
               />
             </div>
             <p className="text-xs text-gray-600 font-bold">
-              {remainingBudget >= 0 ? `₹${remainingBudget.toLocaleString()} remaining` : `Exceeded by ₹${Math.abs(remainingBudget).toLocaleString()}`}
+              {remainingBudget >= 0 ? `${formatMoney(remainingBudget)} remaining` : `Exceeded by ${formatMoney(Math.abs(remainingBudget))}`}
             </p>
           </div>
         </DashboardCard>
       </div>
 
       {/* Recent Activity */}
-      <ExpenseList expenses={expenses} title="Recent Activity" onDelete={handleDelete} />
+      <ExpenseList
+        expenses={expenses}
+        title="Recent Activity"
+        onDelete={handleDelete}
+        currency={settings.currency}
+        decimalPlaces={settings.decimalPlaces}
+        dateFormat={settings.dateFormat}
+      />
 
       {/* Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

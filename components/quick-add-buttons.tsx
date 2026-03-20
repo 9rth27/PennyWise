@@ -3,6 +3,7 @@
 import React from 'react';
 import { DashboardCard } from './dashboard-card';
 import { useUserSettings } from '@/hooks/use-user-settings';
+import { formatCurrencyAmount } from '@/lib/display-format';
 
 const DEFAULT_AMOUNTS: Record<string, number> = {
   tea: 50,
@@ -39,7 +40,7 @@ export function QuickAddButtons({ onAdd }: QuickAddButtonsProps) {
           >
             <div className="text-3xl max-sm:text-2xl mb-2">{category.emoji}</div>
             <div className="font-bold text-xs md:text-sm">{category.label}</div>
-            <div className="mt-1 font-black text-sm">₹{amounts[category.id] || DEFAULT_AMOUNTS[category.id]}</div>
+            <div className="mt-1 font-black text-sm">{formatCurrencyAmount(amounts[category.id] || DEFAULT_AMOUNTS[category.id], settings.currency, settings.decimalPlaces)}</div>
           </button>
         ))}
       </div>

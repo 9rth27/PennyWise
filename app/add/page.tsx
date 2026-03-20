@@ -4,11 +4,14 @@ import React, { useState } from 'react';
 import { ExpenseForm } from '@/components/expense-form';
 import { DashboardCard } from '@/components/dashboard-card';
 import { createExpenseId, useExpenses } from '@/hooks/use-expenses';
+import { useUserSettings } from '@/hooks/use-user-settings';
+import { formatCurrencyAmount } from '@/lib/display-format';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 export default function AddExpensePage() {
   const { addExpense } = useExpenses();
+  const { settings } = useUserSettings();
   const router = useRouter();
 
   const handleSubmit = async (data: { category: string; amount: number; name?: string; description?: string; paymentMethod?: string }) => {
@@ -26,7 +29,7 @@ export default function AddExpensePage() {
       return;
     }
 
-    toast.success(`✓ Expense of ₹${data.amount} added to ${data.category}`, {
+    toast.success(`✓ Expense of ${formatCurrencyAmount(data.amount, settings.currency, settings.decimalPlaces)} added to ${data.category}`, {
       duration: 3000,
     });
     

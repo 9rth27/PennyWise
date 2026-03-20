@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ExpenseList, Expense } from '@/components/expense-list';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
+import { formatCurrencyAmount } from '@/lib/display-format';
 
 import { useExpenses } from '@/hooks/use-expenses';
 import { useUserSettings } from '@/hooks/use-user-settings';
@@ -11,6 +12,7 @@ import { useUserSettings } from '@/hooks/use-user-settings';
 export default function ExpensesPage() {
   const { expenses, deleteExpense } = useExpenses();
   const { settings } = useUserSettings();
+  const formatMoney = (amount: number) => formatCurrencyAmount(amount, settings.currency, settings.decimalPlaces);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const categories = useMemo(
@@ -59,13 +61,13 @@ export default function ExpensesPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <DashboardCard title="Total Spent">
-          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">₹{totalSpent.toFixed(2)}</p>
+          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">{formatMoney(totalSpent)}</p>
         </DashboardCard>
         <DashboardCard title="Transactions">
           <p className="text-4xl max-sm:text-3xl font-black text-black">{filteredExpenses.length}</p>
         </DashboardCard>
         <DashboardCard title="Average Expense">
-          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">₹{averageExpense.toFixed(2)}</p>
+          <p className="text-4xl max-sm:text-3xl font-black text-black break-words">{formatMoney(averageExpense)}</p>
         </DashboardCard>
       </div>
 
@@ -89,7 +91,15 @@ export default function ExpensesPage() {
       </DashboardCard>
 
       {/* Expense List */}
-      <ExpenseList expenses={filteredExpenses} title="Transaction History" showAll={true} onDelete={handleDelete} />
+      <ExpenseList
+        expenses={filteredExpenses}
+        title="Transaction History"
+        showAll={true}
+        onDelete={handleDelete}
+        currency={settings.currency}
+        decimalPlaces={settings.decimalPlaces}
+        dateFormat={settings.dateFormat}
+      />
     </div>
   );
 }

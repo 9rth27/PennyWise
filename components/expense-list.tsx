@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { DashboardCard } from './dashboard-card';
+import { formatCurrencyAmount, formatDateValue } from '@/lib/display-format';
 
 export interface Expense {
   id: string;
@@ -29,9 +30,20 @@ interface ExpenseListProps {
   title?: string;
   showAll?: boolean;
   onDelete?: (id: string) => void;
+  currency?: string;
+  decimalPlaces?: number;
+  dateFormat?: string;
 }
 
-const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Recent Activity', showAll = false, onDelete }: ExpenseListProps) {
+const ExpenseListComponent = memo(function ExpenseList({
+  expenses,
+  title = 'Recent Activity',
+  showAll = false,
+  onDelete,
+  currency = 'INR',
+  decimalPlaces = 2,
+  dateFormat = 'DD/MM/YYYY',
+}: ExpenseListProps) {
   const displayExpenses = showAll ? expenses : expenses.slice(0, 5);
 
   return (
@@ -49,11 +61,11 @@ const ExpenseListComponent = memo(function ExpenseList({ expenses, title = 'Rece
                     {expense.name?.trim() || expense.category}
                   </p>
                   {expense.name?.trim() ? <p className="text-xs text-gray-600 capitalize">{expense.category}</p> : null}
-                  <p className="text-xs text-gray-600">{expense.date} at {expense.time}</p>
+                  <p className="text-xs text-gray-600">{formatDateValue(expense.date, dateFormat)} at {expense.time}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 max-sm:justify-between max-sm:w-full">
-                <p className="font-black text-lg text-black">₹{expense.amount.toFixed(2)}</p>
+                <p className="font-black text-lg text-black">{formatCurrencyAmount(expense.amount, currency, decimalPlaces)}</p>
                 {onDelete && (
                   <button 
                     onClick={() => onDelete(expense.id)}

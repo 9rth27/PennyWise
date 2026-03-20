@@ -198,6 +198,7 @@ export function useUserSettings() {
   const [settings, setSettings] = useState<UserSettings>(() => getDefaultUserSettings());
   const [isLoading, setIsLoading] = useState(true);
   const hasShownSchemaHintRef = useRef(false);
+  const activeLoadRequestRef = useRef(0);
 
   const supabase = useMemo(() => {
     try {
@@ -208,17 +209,29 @@ export function useUserSettings() {
   }, []);
 
   const loadSettings = useCallback(async () => {
+    const requestId = ++activeLoadRequestRef.current;
+
     if (!supabase) {
+      if (requestId !== activeLoadRequestRef.current) {
+        return;
+      }
+
       setSettings(getDefaultUserSettings());
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    if (requestId === activeLoadRequestRef.current) {
+      setIsLoading(true);
+    }
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    if (requestId !== activeLoadRequestRef.current) {
+      return;
+    }
 
     if (!user) {
       setSettings(getDefaultUserSettings());
@@ -234,12 +247,20 @@ export function useUserSettings() {
       .eq('user_id', user.id)
       .maybeSingle();
 
+    if (requestId !== activeLoadRequestRef.current) {
+      return;
+    }
+
     if (error && isMissingColumnError(error)) {
       const { data: legacyData, error: legacyError } = await supabase
         .from('user_settings')
         .select('monthly_budget')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (requestId !== activeLoadRequestRef.current) {
+        return;
+      }
 
       if (legacyError) {
         if (isMissingSchemaError(legacyError) && !hasShownSchemaHintRef.current) {
@@ -282,6 +303,10 @@ export function useUserSettings() {
     setSettings(normalizedSettings);
 
     if (!data) {
+      if (requestId !== activeLoadRequestRef.current) {
+        return;
+      }
+
       const { error: upsertError } = await supabase
         .from('user_settings')
         .upsert(
@@ -293,6 +318,10 @@ export function useUserSettings() {
             onConflict: 'user_id',
           },
         );
+
+      if (requestId !== activeLoadRequestRef.current) {
+        return;
+      }
 
       if (upsertError && isMissingColumnError(upsertError)) {
         await supabase
@@ -306,7 +335,15 @@ export function useUserSettings() {
               onConflict: 'user_id',
             },
           );
+
+        if (requestId !== activeLoadRequestRef.current) {
+          return;
+        }
       }
+    }
+
+    if (requestId !== activeLoadRequestRef.current) {
+      return;
     }
 
     setIsLoading(false);

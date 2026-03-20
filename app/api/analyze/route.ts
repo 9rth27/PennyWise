@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import { formatDecimalAmount, getCurrencySymbol, normalizeCurrencyCode, normalizeDecimalPlaces } from '@/lib/display-format';
 
 let groq: Groq | null = null;
 
@@ -34,6 +35,9 @@ export async function POST(req: NextRequest) {
 
     const budgetAmount = Number(body?.budget);
     const safeBudget = Number.isFinite(budgetAmount) && budgetAmount > 0 ? budgetAmount : 0;
+    const safeCurrency = normalizeCurrencyCode(body?.currency);
+    const safeDecimalPlaces = normalizeDecimalPlaces(body?.decimalPlaces);
+    const currencySymbol = getCurrencySymbol(safeCurrency);
 
     const limitedExpenses = rawExpenses
       .slice(0, 100)
@@ -48,15 +52,16 @@ export async function POST(req: NextRequest) {
     }
 
     const totalExpenses = limitedExpenses.reduce((sum: number, e: any) => sum + e.amount, 0);
+    const formatPromptAmount = (amount: number) => `${currencySymbol}${formatDecimalAmount(amount, safeDecimalPlaces)}`;
 
     const prompt = `
       You are a financial advisor. Analyze this expense data and provide 2-3 actionable recommendations.
       
-      Monthly Budget: ₹${Math.round(safeBudget)}
-      Total Expenses: ₹${Math.round(totalExpenses)}
+      Monthly Budget: ${formatPromptAmount(safeBudget)}
+      Total Expenses: ${formatPromptAmount(totalExpenses)}
       
       Categories breakdown (limited data):
-      ${limitedExpenses.slice(0, 5).map((e: any) => `- ${e.category}: ₹${e.amount}`).join('\n')}
+      ${limitedExpenses.slice(0, 5).map((e: any) => `- ${e.category}: ${formatPromptAmount(e.amount)}`).join('\n')}
       
       Respond with ONLY valid JSON:
       { "insights": [{ "type": "alert|warning|success|info", "icon": "emoji", "title": "short title", "message": "brief message" }] }

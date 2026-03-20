@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardCard } from './dashboard-card';
 import { useUserSettings } from '@/hooks/use-user-settings';
+import { getCurrencySymbol, normalizeDecimalPlaces } from '@/lib/display-format';
 
 const DEFAULT_CATEGORIES = [
   { id: 'tea', label: 'Tea/Coffee' },
@@ -31,6 +32,10 @@ interface ExpenseFormProps {
 export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const { settings } = useUserSettings();
   const categories = settings.customCategories.length > 0 ? settings.customCategories : DEFAULT_CATEGORIES;
+  const currencySymbol = getCurrencySymbol(settings.currency);
+  const normalizedDecimalPlaces = normalizeDecimalPlaces(settings.decimalPlaces);
+  const amountStep = normalizedDecimalPlaces === 0 ? '1' : normalizedDecimalPlaces === 1 ? '0.1' : '0.01';
+  const amountPlaceholder = normalizedDecimalPlaces === 0 ? '0' : normalizedDecimalPlaces === 1 ? '0.0' : '0.00';
   const [category, setCategory] = useState('misc');
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
@@ -103,13 +108,13 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         </div>
 
         <div>
-          <label className="block font-bold text-sm mb-2">Amount (₹)</label>
+          <label className="block font-bold text-sm mb-2">Amount ({currencySymbol})</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            step="0.01"
+            placeholder={amountPlaceholder}
+            step={amountStep}
             min="0"
             className="w-full border-2 border-black rounded-lg p-3 font-bold bg-white text-black placeholder-gray-400"
           />

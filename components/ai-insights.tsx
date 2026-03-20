@@ -10,6 +10,8 @@ interface AIInsightsProps {
   topCategory: string;
   avgDailySpending: number;
   expenses?: Expense[];
+  currency?: string;
+  decimalPlaces?: number;
 }
 
 interface Insight {
@@ -19,7 +21,15 @@ interface Insight {
   message: string;
 }
 
-const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpent, topCategory, avgDailySpending, expenses }: AIInsightsProps) {
+const AIInsightsComponent = memo(function AIInsights({
+  monthlyBudget,
+  monthlySpent,
+  topCategory,
+  avgDailySpending,
+  expenses,
+  currency = 'INR',
+  decimalPlaces = 2,
+}: AIInsightsProps) {
   const [aiInsights, setAiInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +42,12 @@ const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpe
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expenses, budget: monthlyBudget }),
+          body: JSON.stringify({
+            expenses,
+            budget: monthlyBudget,
+            currency,
+            decimalPlaces,
+          }),
         });
 
         if (response.ok) {
@@ -47,7 +62,7 @@ const AIInsightsComponent = memo(function AIInsights({ monthlyBudget, monthlySpe
     }
 
     fetchAIInsights();
-  }, [expenses, monthlyBudget]);
+  }, [currency, decimalPlaces, expenses, monthlyBudget]);
 
   const insights = aiInsights;
 

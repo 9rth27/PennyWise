@@ -4,24 +4,30 @@ import React, { useMemo, memo } from 'react';
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { DashboardCard } from './dashboard-card';
 import { Expense } from './expense-list';
+import { formatCurrencyAmount, formatDateValue } from '@/lib/display-format';
 
 interface ExpenseChartsProps {
   expenses: Expense[];
+  currency?: string;
+  decimalPlaces?: number;
+  dateFormat?: string;
 }
 
-const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: ExpenseChartsProps) {
+const ExpenseChartsComponent = memo(function ExpenseCharts({
+  expenses,
+  currency = 'INR',
+  decimalPlaces = 2,
+  dateFormat = 'DD/MM/YYYY',
+}: ExpenseChartsProps) {
+
   // Calculate spending by category
   const categoryData = useMemo(() => {
     return expenses.reduce(
@@ -47,7 +53,7 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
 
   // Calculate spending by date
   const dateData = useMemo(() => {
-    return expenses.reduce(
+    const aggregatedData = expenses.reduce(
       (acc, expense) => {
         const existing = acc.find((item) => item.date === expense.date);
         if (existing) {
@@ -62,9 +68,12 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
       },
       [] as Array<{ date: string; amount: number }>
     );
-  }, [expenses]);
 
-  const COLORS = ['#000000', '#444444', '#888888', '#CCCCCC', '#333333', '#666666', '#999999', '#BBBBBB'];
+    return aggregatedData.map((item) => ({
+      ...item,
+      displayDate: formatDateValue(item.date, dateFormat),
+    }));
+  }, [dateFormat, expenses]);
 
   return (
     <div className="space-y-6">
@@ -78,9 +87,9 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dateData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value: any) => `₹${value.toFixed(2)}`} />
+                <XAxis dataKey="displayDate" />
+                <YAxis tickFormatter={(value) => formatCurrencyAmount(value, currency, decimalPlaces)} />
+                <Tooltip formatter={(value: number | string) => formatCurrencyAmount(value, currency, decimalPlaces)} />
                 <Bar dataKey="amount" fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -99,7 +108,7 @@ const ExpenseChartsComponent = memo(function ExpenseCharts({ expenses }: Expense
                 <p className="font-bold text-black">{item.category}</p>
                 <p className="text-sm text-gray-600">{item.count} transaction{item.count !== 1 ? 's' : ''}</p>
               </div>
-              <p className="font-black text-lg max-sm:break-words">₹{item.amount.toFixed(2)}</p>
+              <p className="font-black text-lg max-sm:break-words">{formatCurrencyAmount(item.amount, currency, decimalPlaces)}</p>
             </div>
           ))}
         </div>
