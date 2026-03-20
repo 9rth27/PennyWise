@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { buildAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -28,7 +29,16 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      const redirectTo = `${window.location.origin}/auth/callback?next=/reset-password`;
+      const redirectTo = buildAuthCallbackUrl({
+        currentOrigin: window.location.origin,
+        next: '/reset-password',
+      });
+
+      if (!redirectTo) {
+        toast.error('Unable to determine a valid redirect URL.');
+        return;
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo,
       });

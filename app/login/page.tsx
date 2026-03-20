@@ -4,6 +4,7 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/src/supabaseClient';
+import { buildAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 
 export default function LoginPage() {
   return (
@@ -38,10 +39,10 @@ function LoginPageContent() {
       return undefined;
     }
 
-    const next = searchParams.get('next') || '/';
-    const callbackUrl = new URL('/auth/callback', window.location.origin);
-    callbackUrl.searchParams.set('next', next);
-    return callbackUrl.toString();
+    return buildAuthCallbackUrl({
+      currentOrigin: window.location.origin,
+      next: searchParams.get('next'),
+    });
   }, [searchParams]);
 
   const handleGoogleLogin = useCallback(async () => {

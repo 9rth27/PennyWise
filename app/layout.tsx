@@ -7,6 +7,15 @@ import './globals.css'
 const geist = Geist({ subsets: ["latin"], display: 'swap', preload: true });
 const geistMono = Geist_Mono({ subsets: ["latin"], display: 'swap', preload: true });
 
+const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const metadataBaseUrl = (() => {
+  try {
+    return new URL(appBaseUrl);
+  } catch {
+    return new URL('http://localhost:3000');
+  }
+})();
+
 export const metadata: Metadata = {
   title: 'PennyWise - Personal Finance Tracker',
   description: 'Track your expenses with style using the neobrutalist PennyWise money tracker',
@@ -28,11 +37,11 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
-  metadataBase: new URL('https://penny-wise.vercel.app'),
+  metadataBase: metadataBaseUrl,
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://penny-wise.vercel.app',
+    url: metadataBaseUrl.toString(),
     siteName: 'PennyWise',
   },
   formatDetection: {

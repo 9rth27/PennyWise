@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { buildAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 
 export default function VerifyEmailPage() {
   return (
@@ -50,11 +51,20 @@ function VerifyEmailPageContent() {
 
     setIsResending(true);
     try {
+      const emailRedirectTo = buildAuthCallbackUrl({
+        currentOrigin: window.location.origin,
+      });
+
+      if (!emailRedirectTo) {
+        toast.error('Unable to determine a valid redirect URL.');
+        return;
+      }
+
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo,
         },
       });
 
