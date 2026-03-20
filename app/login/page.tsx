@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/src/supabaseClient';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   return (
@@ -45,14 +45,10 @@ function LoginPageContent() {
   }, [searchParams]);
 
   const handleGoogleLogin = useCallback(async () => {
-    if (!supabase) {
-      setFormError('Authentication is not configured yet.');
-      return;
-    }
-
     setFormError(null);
     setIsGoogleLoading(true);
     try {
+      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -66,7 +62,7 @@ function LoginPageContent() {
     } finally {
       setIsGoogleLoading(false);
     }
-  }, [buildOAuthRedirectTo, supabase]);
+  }, [buildOAuthRedirectTo]);
 
   useEffect(() => {
     const hasCallbackError = searchParams.get('error') === 'auth_callback_failed';
@@ -97,7 +93,7 @@ function LoginPageContent() {
   // Auto-redirect if already logged in
   useEffect(() => {
     const checkSession = async () => {
-      if (!supabase) return;
+      const supabase = createSupabaseBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         router.push('/');
@@ -110,13 +106,9 @@ function LoginPageContent() {
     event.preventDefault();
     setFormError(null);
 
-    if (!supabase) {
-      setFormError('Authentication is not configured yet.');
-      return;
-    }
-
     setIsLoading(true);
     try {
+      const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
