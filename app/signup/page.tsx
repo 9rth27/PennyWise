@@ -57,8 +57,11 @@ function SignupPageContent() {
 
       if (error) {
         setFormError(error.message || 'Unable to continue with Google right now.');
+        setIsGoogleLoading(false);
       }
-    } finally {
+      // No success message for Google OAuth - auth redirects handle the flow
+    } catch (err) {
+      setFormError('Unable to continue with Google right now.');
       setIsGoogleLoading(false);
     }
   }, [buildOAuthRedirectTo]);
@@ -100,6 +103,7 @@ function SignupPageContent() {
         return;
       }
 
+      // Email/password signup only - Google OAuth redirects handled separately
       setSuccessMessage(`✅ Account created successfully!\n\nPlease check your email (${email}) to confirm your account before logging in.`);
       setName('');
       setEmail('');
