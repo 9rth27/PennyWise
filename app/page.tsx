@@ -16,6 +16,7 @@ function DashboardContent() {
   const { expenses, monthlyBudget, addExpense, deleteExpense } = useExpenses();
   const [userName, setUserName] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [emailConfirmedShown, setEmailConfirmedShown] = useState(false);
 
   // Handle email confirmation toast
@@ -71,6 +72,9 @@ function DashboardContent() {
         console.error('Error fetching user:', error);
         setIsLoggedIn(false);
         setUserName(null);
+      } finally {
+        // Mark auth check as complete - now safe to show login message if needed
+        setIsAuthChecking(false);
       }
     };
 
@@ -197,7 +201,7 @@ function DashboardContent() {
       <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="font-black text-3xl md:text-4xl max-sm:text-2xl mb-2">{getGreeting()}, {userName || 'User'}!</h1>
-          {!isLoggedIn && (
+          {!isAuthChecking && !isLoggedIn && (
             <p className="text-gray-600 font-bold text-base md:text-lg max-sm:text-sm max-w-2xl">Log in now to save your progress securely and access your expenses on every device</p>
           )}
         </div>
