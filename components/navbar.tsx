@@ -32,8 +32,8 @@ const NavbarComponent = memo(function Navbar() {
       const { data } = await supabase.auth.getUser();
       if (mounted) {
         setAuthEmail(data.user?.email ?? null);
-        const fullName = data.user?.user_metadata?.full_name || data.user?.email?.split('@')[0] || null;
-        setUserName(fullName);
+        const fullName = data.user?.user_metadata?.full_name?.trim();
+        setUserName(fullName || null);
       }
     };
 
@@ -41,8 +41,8 @@ const NavbarComponent = memo(function Navbar() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthEmail(session?.user?.email ?? null);
-      const fullName = session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || null;
-      setUserName(fullName);
+      const fullName = session?.user?.user_metadata?.full_name?.trim();
+      setUserName(fullName || null);
     });
 
     return () => {

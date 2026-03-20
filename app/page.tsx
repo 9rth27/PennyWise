@@ -40,9 +40,9 @@ function DashboardContent() {
         
         if (data.user) {
           setIsLoggedIn(true);
-          // Get full name from user metadata
-          const fullName = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User';
-          setUserName(fullName);
+          // Get full name from user metadata - prioritize full_name
+          const fullName = data.user.user_metadata?.full_name?.trim();
+          setUserName(fullName || null);
         } else {
           setIsLoggedIn(false);
           setUserName(null);
@@ -61,8 +61,8 @@ function DashboardContent() {
       const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           setIsLoggedIn(true);
-          const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
-          setUserName(fullName);
+          const fullName = session.user.user_metadata?.full_name?.trim();
+          setUserName(fullName || null);
         } else {
           setIsLoggedIn(false);
           setUserName(null);
