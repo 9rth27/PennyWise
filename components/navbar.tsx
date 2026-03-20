@@ -11,6 +11,7 @@ const NavbarComponent = memo(function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   const supabase = useMemo(() => {
     try {
@@ -31,6 +32,8 @@ const NavbarComponent = memo(function Navbar() {
       const { data } = await supabase.auth.getUser();
       if (mounted) {
         setAuthEmail(data.user?.email ?? null);
+        const fullName = data.user?.user_metadata?.full_name || data.user?.email?.split('@')[0] || null;
+        setUserName(fullName);
       }
     };
 
@@ -38,6 +41,8 @@ const NavbarComponent = memo(function Navbar() {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthEmail(session?.user?.email ?? null);
+      const fullName = session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || null;
+      setUserName(fullName);
     });
 
     return () => {
@@ -100,8 +105,8 @@ const NavbarComponent = memo(function Navbar() {
             <div className="flex items-center gap-3 border-l-2 border-black pl-6">
               {authEmail ? (
                 <>
-                  <span className="px-3 py-2 font-bold rounded-lg border-2 border-black bg-gray-50 text-black max-w-48 truncate" title={authEmail}>
-                    {authEmail}
+                  <span className="px-3 py-2 font-bold rounded-lg border-2 border-black bg-gray-50 text-black max-w-48 truncate" title={userName || authEmail}>
+                    {userName || authEmail}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -165,8 +170,8 @@ const NavbarComponent = memo(function Navbar() {
           <div className="p-4 flex flex-col gap-3 bg-white border-t-2 border-black border-dashed">
             {authEmail ? (
               <>
-                <div className="px-4 py-3 text-center font-bold rounded-lg border-2 border-black bg-gray-50 text-black truncate" title={authEmail}>
-                  {authEmail}
+                <div className="px-4 py-3 text-center font-bold rounded-lg border-2 border-black bg-gray-50 text-black truncate" title={userName || authEmail}>
+                  {userName || authEmail}
                 </div>
                 <button
                   onClick={handleLogout}

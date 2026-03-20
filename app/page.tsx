@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { QuickAddButtons } from '@/components/quick-add-buttons';
@@ -8,11 +8,74 @@ import { TodaySnapshot } from '@/components/today-snapshot';
 import { ExpenseList, Expense } from '@/components/expense-list';
 import { DashboardCard } from '@/components/dashboard-card';
 import { toast } from 'sonner';
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 import { useExpenses } from '@/hooks/use-expenses';
 
 function DashboardContent() {
   const { expenses, monthlyBudget, addExpense, deleteExpense } = useExpenses();
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [emailConfirmedShown, setEmailConfirmedShown] = useState(false);
+
+  // Handle email confirmation toast
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('emailConfirmed') === 'true' && !emailConfirmedShown) {
+      toast.success('✅ Email confirmed! You can now log in.');
+      setEmailConfirmedShown(true);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [emailConfirmedShown]);
+
+  // Fetch user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase.auth.getUser();
+        
+        if (data.user) {
+          setIsLoggedIn(true);
+          // Get full name from user metadata
+          const fullName = data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User';
+          setUserName(fullName);
+        } else {
+          setIsLoggedIn(false);
+          setUserName(null);
+        }
+      } catch {
+        setIsLoggedIn(false);
+        setUserName(null);
+      }
+    };
+
+    fetchUserData();
+
+    // Listen for auth changes
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setIsLoggedIn(true);
+          const fullName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User';
+          setUserName(fullName);
+        } else {
+          setIsLoggedIn(false);
+          setUserName(null);
+        }
+      });
+
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    } catch {
+      return undefined;
+    }
+  }, []);
 
   // Memoize all expensive calculations
   const { todayExpenses, totalTodaySpent, monthlyTotal, remainingBudget, topCategory } = useMemo(() => {
@@ -92,8 +155,10 @@ function DashboardContent() {
       {/* Header */}
       <div className="border-4 border-black rounded-xl p-6 md:p-8 bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="font-black text-3xl md:text-4xl max-sm:text-2xl mb-2">{getGreeting()}, User!</h1>
-          <p className="text-gray-600 font-bold text-base md:text-lg max-sm:text-sm max-w-2xl">Log in now to save your progress securely and access your expenses on every device</p>
+          <h1 className="font-black text-3xl md:text-4xl max-sm:text-2xl mb-2">{getGreeting()}, {userName || 'User'}!</h1>
+          {!isLoggedIn && (
+            <p className="text-gray-600 font-bold text-base md:text-lg max-sm:text-sm max-w-2xl">Log in now to save your progress securely and access your expenses on every device</p>
+          )}
         </div>
         <Link href="/add" className="w-full md:w-auto text-center border-3 border-black rounded-xl px-6 py-3 bg-black text-white font-black hover:bg-gray-800 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)] whitespace-nowrap">
           + Add Expense

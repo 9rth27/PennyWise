@@ -98,6 +98,11 @@ function SignupPageContent() {
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
+        options: {
+          data: {
+            full_name: name.trim(),
+          },
+        },
       });
 
       if (error) {
