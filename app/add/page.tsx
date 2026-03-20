@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { ExpenseForm } from '@/components/expense-form';
 import { DashboardCard } from '@/components/dashboard-card';
-import { useExpenses } from '@/hooks/use-expenses';
+import { createExpenseId, useExpenses } from '@/hooks/use-expenses';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -12,11 +12,13 @@ export default function AddExpensePage() {
   const router = useRouter();
 
   const handleSubmit = async (data: { category: string; amount: number; name?: string; description?: string; paymentMethod?: string }) => {
+    const now = new Date();
+
     const newExpense = {
-      id: crypto.getRandomValues(new Uint8Array(12)).reduce((hex, byte) => hex + byte.toString(16).padStart(2, '0'), ''),
+      id: createExpenseId(),
       ...data,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString(),
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 8),
     };
     
     const isAdded = await addExpense(newExpense);
