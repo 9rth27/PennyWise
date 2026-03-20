@@ -1,28 +1,21 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'sonner';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { supabase } from '@/src/supabaseClient';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const hasTriggeredGoogleRef = useRef(false);
   const hasShownCallbackErrorRef = useRef(false);
-
-  const supabase = useMemo(() => {
-    try {
-      return createSupabaseBrowserClient();
-    } catch {
-      return null;
-    }
-  }, []);
 
   const buildOAuthRedirectTo = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -37,10 +30,11 @@ export default function LoginPage() {
 
   const handleGoogleLogin = useCallback(async () => {
     if (!supabase) {
-      toast.error('Authentication is not configured yet.');
+      setFormError('Authentication is not configured yet.');
       return;
     }
 
+    setFormError(null);
     setIsGoogleLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -51,7 +45,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        toast.error(error.message || 'Unable to continue with Google right now.');
+        setFormError(error.message || 'Unable to continue with Google right now.');
       }
     } finally {
       setIsGoogleLoading(false);
@@ -65,7 +59,7 @@ export default function LoginPage() {
     }
 
     hasShownCallbackErrorRef.current = true;
-    toast.error('Authentication callback failed. Please try again.');
+    setFormError('Authentication callback failed. Please try again.');
   }, [searchParams]);
 
   useEffect(() => {
@@ -84,11 +78,24 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push('/');
+      }
+    };
+    void checkSession();
+  }, [router]);
+
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormError(null);
 
     if (!supabase) {
-      toast.error('Authentication is not configured yet.');
+      setFormError('Authentication is not configured yet.');
       return;
     }
 
@@ -100,13 +107,19 @@ export default function LoginPage() {
       });
 
       if (error) {
-        toast.error(error.message || 'Unable to log in right now.');
+        setFormError(error.message || 'Unable to log in right now.');
         return;
       }
 
-      toast.success('Logged in successfully.');
-      router.push(searchParams.get('next') || '/');
+      // Store reminder preference
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
+      }
+
+      router.push('/');
       router.refresh();
+    } catch {
+      setFormError('Unable to log in right now.');
     } finally {
       setIsLoading(false);
     }
@@ -147,7 +160,16 @@ export default function LoginPage() {
               required
               className="w-full p-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
             />
-            <div className="text-right mt-1">
+            <div className="flex items-center justify-between mt-3">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-5 h-5 border-2 border-black rounded cursor-pointer accent-blue-600"
+                />
+                <span className="font-bold text-black group-hover:text-blue-600 transition-colors">Remember me</span>
+              </label>
               <Link href="/forgot-password" className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
                 Forgot password?
               </Link>
@@ -175,6 +197,10 @@ export default function LoginPage() {
               {isGoogleLoading ? 'Redirecting...' : 'Continue with Google'}
             </span>
           </button>
+
+          {formError ? (
+            <p className="text-sm font-bold text-red-600">{formError}</p>
+          ) : null}
         </form>
 
         <div className="mt-6 text-center border-t-2 border-gray-100 pt-4">
