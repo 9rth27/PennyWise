@@ -105,8 +105,8 @@ const NavbarComponent = memo(function Navbar() {
             <div className="flex items-center gap-3 border-l-2 border-black pl-6">
               {authEmail ? (
                 <>
-                  <span className="px-3 py-2 font-bold rounded-lg border-2 border-black bg-gray-50 text-black max-w-48 truncate" title={userName || authEmail}>
-                    {userName || authEmail}
+                  <span className="px-3 py-2 font-bold rounded-lg border-2 border-black bg-gray-50 text-black max-w-48 truncate" title={authEmail}>
+                    {authEmail}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -170,8 +170,8 @@ const NavbarComponent = memo(function Navbar() {
           <div className="p-4 flex flex-col gap-3 bg-white border-t-2 border-black border-dashed">
             {authEmail ? (
               <>
-                <div className="px-4 py-3 text-center font-bold rounded-lg border-2 border-black bg-gray-50 text-black truncate" title={userName || authEmail}>
-                  {userName || authEmail}
+                <div className="px-4 py-3 text-center font-bold rounded-lg border-2 border-black bg-gray-50 text-black truncate" title={authEmail}>
+                  {authEmail}
                 </div>
                 <button
                   onClick={handleLogout}
